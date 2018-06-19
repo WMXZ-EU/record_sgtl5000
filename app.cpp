@@ -56,8 +56,14 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 24
 // private 'library' included directly into sketch
 const int32_t on = 60;
 const int32_t off = 60;
-int32_t tstart;
-int32_t tstop;
+
+uint32_t record_or_sleep(void)
+{
+  uint32_t tt = RTC_TSR;
+  uint32_t dt = tt % (on+off);
+  if(dt>=on) return (on+off-dt);
+  return 0;
+}
 
 #include "i2s_mods.h"
 #include "logger_if.h"
@@ -66,10 +72,9 @@ int32_t tstop;
 //__________________________General Arduino Routines_____________________________________
 extern "C" void setup() {
   // put your setup code here, to run once:
-  
-  uint32_t tt=RTC_TSR;
-  uint32_t dt = tt % (on+off);
-  if(dt>=on) setWakeupCallandSleep(on+off-dt);      
+
+  uint32_t nsec = record_or_sleep();
+  if(nsec>0)setWakeupCallandSleep(nsec);      
 
   #if DO_DEBUG>0
     while(!Serial);
@@ -97,7 +102,7 @@ void loop() {
   static int16_t state=0; // 0: open new file, -1: last file
 
   if(queue1.available())
-  {  // have data on que
+  {  // have data on queue
     if(state==0)
     { // generate header before file is opened
        uint32_t *header=(uint32_t *) headerUpdate();
@@ -130,11 +135,10 @@ void loop() {
 
       if(state==0)
       {
-        uint32_t tt=RTC_TSR;
-        uint32_t dt = tt % (on+off);
-        if(dt>=on) 
+        uint32_t nsec = record_or_sleep();
+        if(nsec>0) 
         { uSD.exit();
-          setWakeupCallandSleep(on+off-dt);      
+          setWakeupCallandSleep(nsec);      
         }
       }
     }

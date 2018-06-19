@@ -192,13 +192,6 @@ char * headerUpdate(void)
 	return header;
 }
 
-void record_or_sleep(void)
-{
-  uint32_t tt=RTC_TSR;
-  uint32_t dt = tt % (on+off);
-  if(dt>=on) uSD.setClosing(); 
-}
-
 //____________________________ FS Interface implementation______________________
 void c_uSD::init(void)
 {
