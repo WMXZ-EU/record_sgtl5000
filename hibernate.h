@@ -31,6 +31,8 @@
 #include "kinetis.h"
 #include "core_pins.h"
 
+uint32_t record_or_sleep(void);
+
 /******************* Seting Alarm **************************/
 #define RTC_IER_TAIE_MASK       0x4u
 #define RTC_SR_TAF_MASK         0x4u

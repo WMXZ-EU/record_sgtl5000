@@ -30,18 +30,23 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 24
  *      AudioProcessorUsage and AudioProcessorUsageMax
  * defined in stock AudioStream.h
  */
-
-#if defined(__MK20DX256__)
-  #define MQUEU 100 // number of buffers in aquisition queue
-#elif defined(__MK64FX512__)
-  #define MQUEU 550 // number of buffers in aquisition queue
-#elif defined(__MK66FX1M0__)
-  #define MQUEU 550 // number of buffers in aquisition queue
-#else
-  #define MQUEU 53 // number of buffers in aquisition queue
-#endif
+  #if defined(__MK20DX256__)
+    #define MQUEU 100 // number of buffers in aquisition queue
+  #elif defined(__MK64FX512__)
+    #define MQUEU 550 // number of buffers in aquisition queue
+  #elif defined(__MK66FX1M0__)
+    #define MQUEU 550 // number of buffers in aquisition queue
+  #else
+    #define MQUEU 53 // number of buffers in aquisition queue
+  #endif
+  
 #define SEL_LR 1  // record only a single channel (0 left, 1 right)
 
+// definitions for logging
+#define MAXBUF 200
+#define BUFFERSIZE (8*1024)
+
+// adapted from audio gui
   #include "input_i2s.h"
   AudioInputI2S         acq;
 
@@ -54,6 +59,11 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 24
   AudioControlSGTL5000 audioShield;
 
 // private 'library' included directly into sketch
+#include "i2s_mods.h"
+#include "logger_if.h"
+#include "hibernate.h"
+
+// utility for hibernating
 const int32_t on = 60;
 const int32_t off = 60;
 
@@ -65,14 +75,27 @@ uint32_t record_or_sleep(void)
   return 0;
 }
 
-#include "i2s_mods.h"
-#include "logger_if.h"
-#include "hibernate.h"
+// utility for logger
+char * headerUpdate(void)
+{
+  static char header[512];
+  header[0] = 'W'; header[1] = 'M'; header[2] = 'X'; header[3] = 'Z';
+  
+  struct tm tx = seconds2tm(RTC_TSR);
+  sprintf(&header[5], "%04d_%02d_%02d_%02d_%02d_%02d", tx.tm_year, tx.tm_mon, tx.tm_mday, tx.tm_hour, tx.tm_min, tx.tm_sec);
+  //
+  // add more info to header
+  //
+  *(uint32_t*) &header[24] = fsamps[FSI];
+  *(int32_t*) &header[28] = on;
+  *(int32_t*) &header[32] = off;
+
+  return header;
+}
 
 //__________________________General Arduino Routines_____________________________________
 extern "C" void setup() {
   // put your setup code here, to run once:
-
   uint32_t nsec = record_or_sleep();
   if(nsec>0)setWakeupCallandSleep(nsec);      
 

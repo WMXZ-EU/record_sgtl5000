@@ -33,13 +33,21 @@
 //
 #include "SdFs.h"
 
+uint32_t record_or_sleep(void);
+
 // Preallocate 8MB file.
 const uint64_t PRE_ALLOCATE_SIZE = 8ULL << 20;
 
-#define MAXFILE 100
-#define MAXBUF 200
+#ifndef MAXFILE
+  #define MAXFILE 100
+#endif
+#ifdef MAXBUF
+  #define MAXBUF 200
+#endif
 
-#define BUFFERSIZE (8*1024)
+#ifndef BUFFERSIZE
+  #define BUFFERSIZE (8*1024)
+#endif
 int16_t diskBuffer[BUFFERSIZE];
 int16_t *outptr = diskBuffer;
 
@@ -175,22 +183,7 @@ char *makeFilename(void)
   return filename;  
 }
 
-char * headerUpdate(void)
-{
-	static char header[512];
-	header[0] = 'W'; header[1] = 'M'; header[2] = 'X'; header[3] = 'Z';
-	
-	struct tm tx = seconds2tm(RTC_TSR);
-	sprintf(&header[5], "%04d_%02d_%02d_%02d_%02d_%02d", tx.tm_year, tx.tm_mon, tx.tm_mday, tx.tm_hour, tx.tm_min, tx.tm_sec);
-	//
-	// add more info to header
-	//
-  *(uint32_t*) &header[24] = fsamps[FSI];
-	*(int32_t*) &header[28] = on;
-  *(int32_t*) &header[32] = off;
-
-	return header;
-}
+char * headerUpdate(void);
 
 //____________________________ FS Interface implementation______________________
 void c_uSD::init(void)
