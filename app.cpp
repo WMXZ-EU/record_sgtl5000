@@ -30,17 +30,19 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 24
  *      AudioProcessorUsage and AudioProcessorUsageMax
  * defined in stock AudioStream.h
  */
-  #if defined(__MK20DX256__)
-    #define MQUEU 100 // number of buffers in aquisition queue
-  #elif defined(__MK64FX512__)
-    #define MQUEU 550 // number of buffers in aquisition queue
-  #elif defined(__MK66FX1M0__)
-    #define MQUEU 550 // number of buffers in aquisition queue
-  #else
-    #define MQUEU 53 // number of buffers in aquisition queue
-  #endif
-  
 #define SEL_LR 1  // record only a single channel (0 left, 1 right)
+
+
+#if defined(__MK20DX256__)
+  #define MQUEU 100 // number of buffers in aquisition queue
+#elif defined(__MK64FX512__)
+  #define MQUEU 550 // number of buffers in aquisition queue
+#elif defined(__MK66FX1M0__)
+  #define MQUEU 550 // number of buffers in aquisition queue
+#else
+  #define MQUEU 53 // number of buffers in aquisition queue
+#endif
+  
 
 // definitions for logging
 #define MAXBUF 200
@@ -79,7 +81,7 @@ uint32_t record_or_sleep(void)
 char * headerUpdate(void)
 {
   static char header[512];
-  header[0] = 'W'; header[1] = 'M'; header[2] = 'X'; header[3] = 'Z';
+  sprintf(&header[0], "WMXZ");
   
   struct tm tx = seconds2tm(RTC_TSR);
   sprintf(&header[5], "%04d_%02d_%02d_%02d_%02d_%02d", tx.tm_year, tx.tm_mon, tx.tm_mday, tx.tm_hour, tx.tm_min, tx.tm_sec);

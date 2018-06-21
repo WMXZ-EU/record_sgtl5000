@@ -36,6 +36,18 @@
 
 #include "AudioStream.h"
 
+#ifndef MQUEUE
+  #if defined(__MK20DX256__)
+    #define MQUEU 100 // number of buffers in aquisition queue
+  #elif defined(__MK64FX512__)
+    #define MQUEU 550 // number of buffers in aquisition queue
+  #elif defined(__MK66FX1M0__)
+    #define MQUEU 550 // number of buffers in aquisition queue
+  #else
+    #define MQUEU 53 // number of buffers in aquisition queue
+  #endif
+#endif  
+
 //#define MQ 53
 template <typename T, int MQ>
 class mRecordQueue : public AudioStream
