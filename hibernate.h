@@ -146,10 +146,4 @@ void setWakeupCallandSleep(uint32_t nsec)
    yield();
    gotoSleep();
 }
-
-void setWakeupCallandSleep2( uint8_t hours, uint8_t minutes, uint8_t seconds ) 
-{
-    uint32_t nsec = ( hours * 3600 ) + ( minutes * 60 ) + seconds;
-    setWakeupCallandSleep(nsec);
-}
 #endif

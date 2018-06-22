@@ -32,7 +32,6 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 24
  */
 #define SEL_LR 1  // record only a single channel (0 left, 1 right)
 
-
 #if defined(__MK20DX256__)
   #define MQUEU 100 // number of buffers in aquisition queue
 #elif defined(__MK64FX512__)
@@ -105,12 +104,11 @@ extern "C" void setup() {
     while(!Serial);
   #endif
   
-  AudioMemory (MQUEU+10);
+  AudioMemory (MQUEU+5);
   audioShield.enable();
   audioShield.inputSelect(AUDIO_INPUT_LINEIN);  //AUDIO_INPUT_LINEIN or AUDIO_INPUT_MIC
    //
   I2S_modification(fsamps[FSI],32);
-
   delay(1);
   SGTL5000_modification(FSI); // must be called after I2S initialization stabilized (0: 8kHz, 1: 16 kHz 2:32 kHz, 3:44.1 kHz, 4:48 kHz, 5:96 kHz, 6:192 kHz)
   
