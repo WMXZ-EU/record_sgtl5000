@@ -206,6 +206,7 @@ void c_uSD::exit(void)
 {
   #if defined(__MK20DX256__)
     digitalWriteFast(SD_CS,HIGH); // deactivate uSD (release CS)
+    delay(10);
 //    pinMode(SD_CS,INPUT_DISABLE);
   #endif
 //  pinMode(13,INPUT_DISABLE);

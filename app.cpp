@@ -164,7 +164,6 @@ void loop() {
           SGTL5000_disable();
           I2S_stopClock();
           setWakeupCallandSleep(nsec);      
-          I2S_startClock();
         }
       }
     }
