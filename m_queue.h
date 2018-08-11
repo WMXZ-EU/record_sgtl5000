@@ -26,41 +26,27 @@
 
 // WMXZ 01-02-2018 modified to template for variable buffersize
 // this routine is equivalent with stock record_queue if initiated as 
-// "mRecordQueue <int16_t, 53> queue1;"
-// Type T sgould be int16_t for standard AudioStream
-// if using own AudioStream version i.e. modified audio_block_t definition than call with proper type
-
+// "mRecordQueue <53> queue1;"
+// data are returned as void *, so "readBuffer" needs cast to proper type as defined in AudioStream
  
 #ifndef M_QUEUE_H
 #define M_QUEUE_H
 
 #include "AudioStream.h"
 
-#ifndef MQUEUE
-  #if defined(__MK20DX256__)
-    #define MQUEU 100 // number of buffers in aquisition queue
-  #elif defined(__MK64FX512__)
-    #define MQUEU 550 // number of buffers in aquisition queue
-  #elif defined(__MK66FX1M0__)
-    #define MQUEU 550 // number of buffers in aquisition queue
-  #else
-    #define MQUEU 53 // number of buffers in aquisition queue
-  #endif
-#endif  
-
 //#define MQ 53
-template <typename T, int MQ>
+template <int MQ>
 class mRecordQueue : public AudioStream
 {
 public:
 	mRecordQueue(void) : AudioStream(1, inputQueueArray),
 		userblock(NULL), head(0), tail(0), enabled(0) { }
    
-	void begin(void) { clear();	enabled = 1;}
+	void begin(void) {  clear();	 enabled = 1;	}
   void end(void) { enabled = 0; }
 	int available(void);
 	void clear(void);
-	T * readBuffer(void);
+	void * readBuffer(void);
 	void freeBuffer(void);
 	virtual void update(void);
 private:
@@ -68,24 +54,24 @@ private:
 	audio_block_t * volatile queue[MQ];
 	audio_block_t *userblock;
 	volatile uint16_t head, tail, enabled;
+
+  //temp variables
+  uint16_t h, t;
+
 };
 
-template <typename T, int MQ>
-int mRecordQueue<T, MQ>::available(void)
+template <int MQ>
+int mRecordQueue<MQ>::available(void)
 {
-	uint32_t h, t;
-
 	h = head;
 	t = tail;
 	if (h >= t) return h - t;
 	return MQ + h - t;
 }
 
-template <typename T, int MQ>
-void mRecordQueue<T, MQ>::clear(void)
+template <int MQ>
+void mRecordQueue<MQ>::clear(void)
 {
-	uint32_t t;
-
 	if (userblock) {
 		release(userblock);
 		userblock = NULL;
@@ -98,36 +84,30 @@ void mRecordQueue<T, MQ>::clear(void)
 	tail = t;
 }
 
-template <typename T, int MQ>
-T * mRecordQueue<T, MQ>::readBuffer(void)
+template <int MQ>
+void * mRecordQueue<MQ>::readBuffer(void)
 {
-	uint32_t t;
-
 	if (userblock) return NULL;
 	t = tail;
 	if (t == head) return NULL;
 	if (++t >= MQ) t = 0;
 	userblock = queue[t];
 	tail = t;
-	return userblock->data;
+	return (void *) userblock->data;
 }
 
-template <typename T, int MQ>
-void mRecordQueue<T, MQ>::freeBuffer(void)
+template <int MQ>
+void mRecordQueue<MQ>::freeBuffer(void)
 {
 	if (userblock == NULL) return;
 	release(userblock);
 	userblock = NULL;
 }
 
-uint32_t outCount=0;
-
-template <typename T, int MQ>
-void mRecordQueue<T, MQ>::update(void)
+template <int MQ>
+void mRecordQueue<MQ>::update(void)
 {
 	audio_block_t *block;
-	uint32_t h;
-	outCount++;
 
 	block = receiveReadOnly();
 	if (!block) return;

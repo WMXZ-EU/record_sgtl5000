@@ -56,7 +56,7 @@ void I2S_dividers(uint32_t *iscl, uint32_t fsamp, uint32_t nbits)
 void I2S_modification(uint32_t fsamp, uint16_t nbits) 
 { uint32_t iscl[3]; 
 
-  iscl[2]=1; // this is good for PJRC sgtl5000 // could b
+  iscl[2]=1; // this is good for PJRC sgtl5000 //  
   
   I2S_dividers(iscl, fsamp ,nbits); 
   int fcpu=F_CPU; 
@@ -86,10 +86,26 @@ void I2S_modification(uint32_t fsamp, uint16_t nbits)
   I2S0_RCSR |= I2S_RCSR_RE | I2S_RCSR_BCE; 
 } 
 
+void I2S_stopClock(void)
+{
+      SIM_SCGC6 &= ~SIM_SCGC6_I2S;
+}
+
+void I2S_startClock(void)
+{
+      SIM_SCGC6 |= SIM_SCGC6_I2S;
+}
+
+void I2S_stop(void)
+{
+    I2S0_RCSR &= ~(I2S_RCSR_RE | I2S_RCSR_BCE);
+}
+
 // ********************************************** following is to change SGTL5000 samling rates ********************
 #define SGTL5000_I2C_ADDR  0x0A  // CTRL_ADR0_CS pin low (normal configuration)
 #define CHIP_CLK_CTRL     0x0004
 #define CHIP_I2S_CTRL     0x0006
+#define CHIP_ANA_POWER    0x0030 
 
 #include "Wire.h"
 unsigned int chipRead(unsigned int reg)
@@ -129,6 +145,12 @@ void SGTL5000_modification(uint32_t fs_mode)
   if(sgtl_mode<0) sgtl_mode = 0;
   
   chipWrite(CHIP_CLK_CTRL, (sgtl_mode<<2));  // 256*Fs| sgtl_mode = 0:32 kHz; 1:44.1 kHz; 2:48 kHz; 3:96 kHz
+}
+
+void SGTL5000_disable(void)
+{
+  chipWrite(CHIP_ANA_POWER, 0); 
+ 
 }
 
 #endif

@@ -52,7 +52,7 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 24
   AudioInputI2S         acq;
 
   #include "m_queue.h"
-  mRecordQueue<int16_t, MQUEU> queue1;
+  mRecordQueue<MQUEU> queue1;
 
   AudioConnection     patchCord1(acq,SEL_LR, queue1,0);
 
@@ -136,14 +136,14 @@ void loop() {
        state=1;
     }
     // fetch data from queue
-    int32_t * data = (int32_t *)queue1.readBuffer();
+    int32_t * data = (int32_t *)queue1.readBuffer(); // cast to int32 to speed-up following copy
     //
     // copy to disk buffer
     uint32_t *ptr=(uint32_t *) outptr;
     for(int ii=0;ii<64;ii++) ptr[ii] = data[ii];
     queue1.freeBuffer(); 
     //
-    // adjust buffer pointer
+    // advance buffer pointer
     outptr+=128; // (128 shorts)
     //
     // if necessary reset buffer pointer and write to disk
@@ -161,7 +161,10 @@ void loop() {
         uint32_t nsec = record_or_sleep();
         if(nsec>0) 
         { uSD.exit();
+          SGTL5000_disable();
+          I2S_stopClock();
           setWakeupCallandSleep(nsec);      
+          I2S_startClock();
         }
       }
     }

@@ -206,11 +206,11 @@ void c_uSD::exit(void)
 {
   #if defined(__MK20DX256__)
     digitalWriteFast(SD_CS,HIGH); // deactivate uSD (release CS)
-    pinMode(SD_CS,INPUT_DISABLE);
+//    pinMode(SD_CS,INPUT_DISABLE);
   #endif
-  pinMode(13,INPUT_DISABLE);
-//  pinMode(13,OUTPUT);
-//  digitalWriteFast(13,HIGH); // this will let LED on during hibernate
+//  pinMode(13,INPUT_DISABLE);
+  pinMode(13,OUTPUT);
+  digitalWriteFast(13,LOW); // this will let LED on during hibernate
 }
 
 int16_t c_uSD::write(int16_t *data, int32_t ndat)
@@ -218,7 +218,7 @@ int16_t c_uSD::write(int16_t *data, int32_t ndat)
   if(state == 0)
   { // open file
     char *filename = makeFilename();
-    if(!filename) {state=-1; return state;} // flag to do not anything
+    if(!filename) {state=-1; return state;} // flag to do nothing anymore
     //
     if (!file.open(filename, O_CREAT | O_TRUNC |O_RDWR)) 
     {  sd.errorHalt("file.open failed");
