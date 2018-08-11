@@ -98,10 +98,14 @@ char * headerUpdate(void)
 extern "C" void setup() {
   // put your setup code here, to run once:
   uint32_t nsec = record_or_sleep();
-  if(nsec>0)setWakeupCallandSleep(nsec);      
+  if(nsec>0)
+  { SGTL5000_disable();
+    I2S_stopClock();
+    setWakeupCallandSleep(nsec);
+  }
 
   #if DO_DEBUG>0
-    while(!Serial);
+    while(!Serial );
   #endif
   
   AudioMemory (MQUEU+5);
