@@ -88,12 +88,21 @@ void I2S_modification(uint32_t fsamp, uint16_t nbits)
 
 void I2S_stopClock(void)
 {
-      SIM_SCGC6 &= ~SIM_SCGC6_I2S;
+  SIM_SCGC6 &= ~SIM_SCGC6_I2S;
+  SIM_SCGC7 &= ~SIM_SCGC7_DMA;
+  SIM_SCGC6 &= ~SIM_SCGC6_DMAMUX;
 }
 
 void I2S_startClock(void)
 {
-      SIM_SCGC6 |= SIM_SCGC6_I2S;
+  SIM_SCGC6 |= SIM_SCGC6_I2S;
+  SIM_SCGC7 |= SIM_SCGC7_DMA;
+  SIM_SCGC6 |= SIM_SCGC6_DMAMUX;
+
+  CORE_PIN23_CONFIG = PORT_PCR_MUX(6); // pin 23, PTC2, I2S0_TX_FS (LRCLK)
+  CORE_PIN9_CONFIG  = PORT_PCR_MUX(6); // pin  9, PTC3, I2S0_TX_BCLK
+  CORE_PIN11_CONFIG = PORT_PCR_MUX(6); // pin 11, PTC6, I2S0_MCLK
+  
 }
 
 void I2S_stop(void)

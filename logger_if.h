@@ -31,12 +31,8 @@
 // this implementation used SdFs from Bill Greiman
 // which needs to be installed as local library 
 //
-#include "SdFs.h"
-
 uint32_t record_or_sleep(void);
 
-// Preallocate 8MB file.
-const uint64_t PRE_ALLOCATE_SIZE = 8ULL << 20;
 
 #ifndef MAXFILE
   #define MAXFILE 100
@@ -52,21 +48,10 @@ int16_t diskBuffer[BUFFERSIZE];
 int16_t *outptr = diskBuffer;
 
 
-#if defined(__MK20DX256__)
-  #define SD_CS 10
-  #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
-#elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
-  // Use FIFO SDIO or DMA_SDIO
-  #define SD_CONFIG SdioConfig(FIFO_SDIO)
-  //#define SD_CONFIG SdioConfig(DMA_SDIO)
-#endif
+#include "mfs.h"
 
 class c_uSD
 {
-  private:
-    SdFs sd;
-    FsFile file;
-    
   public:
     c_uSD(void): state(-1), closing(0) {;}
     void init(void);
@@ -81,18 +66,23 @@ class c_uSD
     int16_t state; // 0 initialized; 1 file open; 2 data written; 3 to be closed
     int16_t nbuf;
     int16_t closing;
+
+    c_mFS mFS;
+
 };
 c_uSD uSD;
+
 
 /*
  *  Logging interface support / implementation functions 
  */
+ /*
 //_______________________________ For File Time settings _______________________
 #include <time.h>
 #define EPOCH_YEAR 1970 //T3 RTC
 #define LEAP_YEAR(Y) (((EPOCH_YEAR+Y)>0) && !((EPOCH_YEAR+Y)%4) && ( ((EPOCH_YEAR+Y)%100) || !((EPOCH_YEAR+Y)%400) ) )
 static  const uint8_t monthDays[]={31,28,31,30,31,30,31,31,30,31,30,31}; 
-
+*/
 /*  int  tm_sec;
   int tm_min;
   int tm_hour;
@@ -103,7 +93,7 @@ static  const uint8_t monthDays[]={31,28,31,30,31,30,31,31,30,31,30,31};
   int tm_yday;
   int tm_isdst;
 */
-
+/*
 struct tm seconds2tm(uint32_t tt)
 { struct tm tx;
   tx.tm_sec   = tt % 60;    tt /= 60; // now it is minutes
@@ -166,6 +156,7 @@ void dateTime(uint16_t* date, uint16_t* time)
   // Return time using FS_TIME macro to format fields.
   *time = FS_TIME(tx.tm_hour, tx.tm_min, tx.tm_sec);
 }
+*/
 
 char *makeFilename(void)
 { static int ifl=0;
@@ -176,7 +167,8 @@ char *makeFilename(void)
 //  sprintf(filename,"File%04d.raw",ifl);
 //
   struct tm tx = seconds2tm(RTC_TSR);
-  sprintf(filename, "test1/WMXZ_%04d_%02d_%02d_%02d_%02d_%02d", tx.tm_year, tx.tm_mon, tx.tm_mday, tx.tm_hour, tx.tm_min, tx.tm_sec);
+//  sprintf(filename, "WMXZ_%04d_%02d_%02d_%02d_%02d_%02d", tx.tm_year, tx.tm_mon, tx.tm_mday, tx.tm_hour, tx.tm_min, tx.tm_sec);
+  sprintf(filename, "%02d_%02d_%02d", tx.tm_hour, tx.tm_min, tx.tm_sec);
   #if DO_DEBUG>0
     Serial.println(filename);
   #endif
@@ -188,31 +180,14 @@ char * headerUpdate(void);
 //____________________________ FS Interface implementation______________________
 void c_uSD::init(void)
 {
-  #if defined(__MK20DX256__)
-      // Initialize the SD card
-    SPI.setMOSI(7);
-    SPI.setSCK(14);
-  #endif  
-  if (!sd.begin(SD_CONFIG)) sd.errorHalt("sd.begin failed");
-
-  // Set Time callback
-  FsDateTime::callback = dateTime;
+  mFS.init();
   //
   nbuf=0;
   state=0;
 }
 
 void c_uSD::exit(void)
-{
-  #if defined(__MK20DX256__)
-    digitalWriteFast(SD_CS,HIGH); // deactivate uSD (release CS)
-    delay(100);
-    SPI.end();
-    pinMode(SD_CS,INPUT_DISABLE);
-  #endif
-//  pinMode(13,INPUT_DISABLE);
-  pinMode(13,OUTPUT);
-  digitalWriteFast(13,LOW); // this will let LED on during hibernate
+{ mFS.exit();
 }
 
 int16_t c_uSD::write(int16_t *data, int32_t ndat)
@@ -222,12 +197,8 @@ int16_t c_uSD::write(int16_t *data, int32_t ndat)
     char *filename = makeFilename();
     if(!filename) {state=-1; return state;} // flag to do nothing anymore
     //
-    if (!file.open(filename, O_CREAT | O_TRUNC |O_RDWR)) 
-    {  sd.errorHalt("file.open failed");
-    }
-    if (!file.preAllocate(PRE_ALLOCATE_SIZE)) 
-    { sd.errorHalt("file.preAllocate failed");    
-    }
+    mFS.open(filename);
+
     state=1; // flag that file is open
     nbuf=0;
   }
@@ -235,7 +206,7 @@ int16_t c_uSD::write(int16_t *data, int32_t ndat)
   if(state == 1 || state == 2)
   {  // write to disk
     state=2;
-    if (2*ndat != file.write((char *) data, 2*ndat)) sd.errorHalt("file.write data failed");
+    mFS.write((unsigned char *) data, 2*ndat);
     nbuf++;
     if(nbuf==MAXBUF) state=3; // flag to close file
     record_or_sleep();  // check if record time is over
@@ -251,11 +222,9 @@ int16_t c_uSD::write(int16_t *data, int32_t ndat)
 
 int16_t c_uSD::close(void)
 {
-    // close file
-    file.truncate();
-    file.close();
-    
-    state=0;  // flag to open new file
-    return state;
+  mFS.close();
+  
+  state=0;  // flag to open new file
+  return state;
 }
 #endif

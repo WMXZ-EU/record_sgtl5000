@@ -26,7 +26,7 @@
  // derived from duff's lowpower modes
  // 06-jun-17: changed some compiler directives
  //            added high speed mode of K66
- // using hybernate disconnects from USB so serial monitor will break (pre TD 1.42)
+ // using hibernate disconnects from USB so serial monitor will break (pre TD 1.42)
  
 #include "kinetis.h"
 #include "core_pins.h"
