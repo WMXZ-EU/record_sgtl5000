@@ -1,5 +1,5 @@
-/* wmxzAudio Library for Teensy 3.X
- * Copyright (c) 2017, Walter Zimmer
+/* SGTL5000 Recorder for Teensy 3.X
+ * Copyright (c) 2018, Walter Zimmer
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+ 
 #ifndef MFS_H
 #define MFS_H
 
@@ -30,10 +31,10 @@
  *  uint32_t write(uint8_t *buffer, uint32_t nbuf);
  *  uint32_t read(uint8_t *buffer, uint32_t nbuf);
  */
- #define SDo 1  // Stock FAT
- #define SdFS 2 // Greimans FAT
- #define uSDFS 3 // CHaN's FAT does no work yet
-// note SDFS needs CHECK_PROGRAMMING set to 1 in SdSpiCard.cpp
+ #define SDo 1  // Stock SD library
+ #define SdFS 2 // Greimans SD library
+ #define uSDFS 3 // CHaN's SD library (does no work yet)
+// note SdFS needs CHECK_PROGRAMMING set to 1 in SdSpiCard.cpp
 
 #define USE_FS SdFS
 
