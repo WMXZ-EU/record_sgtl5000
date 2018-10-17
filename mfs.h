@@ -159,6 +159,10 @@ class c_mFS
       FsDateTime::callback = dateTime;
     }
 
+    void mkDir(char * dirname)  { if(!sd.exists(dirname)) sd.mkdir(dirname);  }
+    
+    void chDir(char * dirname)  { sd.chdir(dirname);   }
+    
     void exit(void)
     {
       digitalWriteFast(SD_CS,LOW);
@@ -250,6 +254,12 @@ class c_mFS
       if (!(SD.begin(SD_CS))) die("error SD.begin");
     }
 
+    void mkDir(char * dirname)
+    {
+      sd.mkdir(dirname);
+    }
+    
+
     void exit(void)
     {
     }
@@ -305,7 +315,12 @@ class c_mFS
       rc = f_mount (&fatfs, (TCHAR *)_T("1:/"), 0);      /* Mount/Unmount a logical drive */
       if (rc) die((char*)"mount", rc);
     }
-    
+
+    void mkDir(char * dirname)
+    {
+      
+    }
+
     void exit(void)
     {
       

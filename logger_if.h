@@ -55,6 +55,9 @@ class c_uSD
   public:
     c_uSD(void): state(-1), closing(0) {;}
     void init(void);
+
+    void chDir(void);
+    
     int16_t write(int16_t * data, int32_t ndat);
     uint16_t getNbuf(void) {return nbuf;}
     void setClosing(void) {closing=1;}
@@ -158,6 +161,17 @@ void dateTime(uint16_t* date, uint16_t* time)
 }
 */
 
+char *makeDirname(void)
+{ static char dirname[40];
+
+  struct tm tx = seconds2tm(RTC_TSR);
+  sprintf(dirname, "%04d%02d%02d", tx.tm_year, tx.tm_mon, tx.tm_mday);
+  #if DO_DEBUG>0
+    Serial.println(dirname);
+  #endif
+  return dirname;  
+}
+
 char *makeFilename(void)
 { static int ifl=0;
   static char filename[40];
@@ -168,7 +182,7 @@ char *makeFilename(void)
 //
   struct tm tx = seconds2tm(RTC_TSR);
 //  sprintf(filename, "WMXZ_%04d_%02d_%02d_%02d_%02d_%02d", tx.tm_year, tx.tm_mon, tx.tm_mday, tx.tm_hour, tx.tm_min, tx.tm_sec);
-  sprintf(filename, "%02d_%02d_%02d", tx.tm_hour, tx.tm_min, tx.tm_sec);
+  sprintf(filename, "%02d_%02d_%02d.wav", tx.tm_hour, tx.tm_min, tx.tm_sec);
   #if DO_DEBUG>0
     Serial.println(filename);
   #endif
@@ -184,6 +198,12 @@ void c_uSD::init(void)
   //
   nbuf=0;
   state=0;
+}
+
+void c_uSD::chDir(void)
+{ char * dirName=makeDirname();
+  mFS.mkDir(dirName);
+  mFS.chDir(dirName);
 }
 
 void c_uSD::exit(void)
