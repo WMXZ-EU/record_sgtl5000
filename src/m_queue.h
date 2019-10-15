@@ -34,6 +34,8 @@
 
 #include "AudioStream.h"
 
+uint32_t dropCount=0;
+
 //#define MQ 53
 template <int MQ>
 class mRecordQueue : public AudioStream
@@ -118,6 +120,7 @@ void mRecordQueue<MQ>::update(void)
 	h = head + 1;
 	if (h >= MQ) h = 0;
 	if (h == tail) {
+		dropCount++;
 		release(block);
 	} else {
 		queue[h] = block;

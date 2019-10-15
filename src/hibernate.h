@@ -28,10 +28,7 @@
  //            added high speed mode of K66
  // using hibernate disconnects from USB so serial monitor will break (pre TD 1.42)
  
-#include "kinetis.h"
 #include "core_pins.h"
-
-uint32_t record_or_sleep(void);
 
 /******************* Seting Alarm **************************/
 #define RTC_IER_TAIE_MASK       0x4u

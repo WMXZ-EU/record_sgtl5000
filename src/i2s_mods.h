@@ -29,7 +29,7 @@
 #ifndef _I2S_MODS_H
 #define _I2S_MODS_H
  
-#include "kinetis.h"
+//#include "kinetis.h"
 #include "core_pins.h"
 
 // attempt to generate dividers programmatically 
@@ -40,7 +40,7 @@ void I2S_dividers(uint32_t *iscl, uint32_t fsamp, uint32_t nbits)
     int64_t i2 = 1; 
     int64_t i3 = iscl[2]+1;
     int fcpu=F_CPU; 
-    if((F_CPU<48000000) || (F_CPU<24000000)) fcpu=96000000; 
+    if((F_CPU == 48000000) || (F_CPU == 24000000)) fcpu=96000000; 
     float A=fcpu/2.0f/i3/(2.0f*nbits*fsamp); 
     float mn=1.0;  
     for(int ii=1;ii<=128;ii++)  
@@ -60,12 +60,12 @@ void I2S_modification(uint32_t fsamp, uint16_t nbits)
   
   I2S_dividers(iscl, fsamp ,nbits); 
   #if DO_DEBUG >0 
-	int fcpu=F_CPU; 
-	if((F_CPU<48000000) || (F_CPU<24000000)) fcpu=96000000; 
-	float mclk = fcpu * (iscl[0]+1.0f) / (iscl[1]+1.0f);
-	float fs = (fcpu * (iscl[0]+1.0f)) / (iscl[1]+1.0f) / 2.0f / (iscl[2]+1.0f) / (2.0f*nbits); 
-    Serial.printf("%d %d: %d %d %d %d %d %d %d\n\r", 
-        F_CPU, fcpu, fsamp, (int)fs, (int) mclk, nbits,iscl[0]+1,iscl[1]+1,iscl[2]+1); 
+    int fcpu=F_CPU; 
+    if((F_CPU==48000000) || (F_CPU==24000000)) fcpu=96000000; 
+    float mclk = fcpu * (iscl[0]+1.0f) / (iscl[1]+1.0f);
+    float fs = (mclk / 2.0f / (iscl[2]+1.0f) / (2.0f*nbits)); 
+      Serial.printf("%d %d: %d %d %d %d %d %d %d\n\r", 
+          F_CPU, fcpu, fsamp, (int)fs, (int) mclk, nbits,iscl[0]+1,iscl[1]+1,iscl[2]+1); 
   #endif 
  
   // stop I2S 
@@ -159,7 +159,6 @@ void SGTL5000_modification(uint32_t fs_mode)
 void SGTL5000_disable(void)
 {
   chipWrite(CHIP_ANA_POWER, 0); 
- 
 }
 
 #endif

@@ -22,31 +22,8 @@
 #include "core_pins.h"
 #include "usb_serial.h"
 
-#define DO_DEBUG 1
-#define FSI 5// desired sampling frequency index
-uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 240000, 360000};
-/*
- * NOTE: changing frequency impacts the macros 
- *      AudioProcessorUsage and AudioProcessorUsageMax
- * defined in stock AudioStream.h
- */
-#define NCH 1
-#define SEL_LR 1  // record only a single channel (0 left, 1 right)
+#include "config.h"
 
-#if defined(__MK20DX256__)
-  #define MQUEU (100/NCH) // number of buffers in aquisition queue
-#elif defined(__MK64FX512__)
-  #define MQUEU (200/NCH) // number of buffers in aquisition queue
-#elif defined(__MK66FX1M0__)
-  #define MQUEU (550/NCH) // number of buffers in aquisition queue
-#else
-  #define MQUEU 53 // number of buffers in aquisition queue
-#endif
-  
-
-// definitions for logging
-#define MAXBUF 200
-#define BUFFERSIZE (8*1024)
 
 // adapted from audio gui
   #include "input_i2s.h"
@@ -65,39 +42,83 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 24
 #include "logger_if.h"
 #include "hibernate.h"
 
-// utility for hibernating
-const int32_t on = 60;
-const int32_t off = 60;
-
-uint32_t record_or_sleep(void)
-{
-  uint32_t tt = RTC_TSR;
-  uint32_t dt = tt % (on+off);
-  if(dt>=on) return (on+off-dt);
-  return 0;
-}
-
 // utility for logger
 char * headerUpdate(void)
 {
   static char header[512];
   sprintf(&header[0], "WMXZ");
   
-  struct tm tx = seconds2tm(RTC_TSR);
-  sprintf(&header[5], "%04d_%02d_%02d_%02d_%02d_%02d", tx.tm_year, tx.tm_mon, tx.tm_mday, tx.tm_hour, tx.tm_min, tx.tm_sec);
+//  struct tm tx = seconds2tm(RTC_TSR);
+  sprintf(&header[5], "%04d_%02d_%02d_%02d_%02d_%02d", year(), month(), day(), hour(), minute(), second());
   //
   // add more info to header
   //
-  *(uint32_t*) &header[24] = fsamps[FSI];
-  *(int32_t*) &header[28] = on;
-  *(int32_t*) &header[32] = off;
+  uint32_t *ptr = (uint32_t*) &header[24];
+  ptr[0] = fsamps[FSI];
+  ptr[1] = (uint32_t) a_on;
+  ptr[2] = (uint32_t) a_off;
+  ptr[3] = (uint32_t) t_on;
 
   return header;
 }
 
+//******************************Auxillary functions **********************
+#include "SdFs.h"
+#include "TimeLib.h"
+time_t getTeensy3Time() { return Teensy3Clock.get(); }
+
+uint16_t generateDirectory(char *filename)
+{
+  sprintf(filename, "%s_%04d%02d%02d", "T36", 
+             year(), month(), day());
+  #if DO_DEBUG>0
+    Serial.println(filename);
+  #endif
+  return 1;
+}
+uint16_t generateFilename(char *filename)
+{
+	sprintf(filename, "%s_%02d%02d%02d.bin", "WMXZ",
+		      	  hour(), minute(), second());
+	return 1;
+}
+
+int32_t record_or_sleep(void)
+{
+	uint32_t tt = (uint32_t) now();
+	int32_t ret = 0; // default: keep recording
+
+	// end of file?
+	uint32_t tsx = tt % t_on;
+	static uint32_t tso=0;
+	if(tsx < tso) ret = -1; // close this file
+	tso=tsx;
+  return ret;
+	// end of acquisition?
+	if(a_off>0)
+	{
+		uint32_t dt = tt % (a_on+a_off);
+		if(dt>=a_on) ret = (a_on+a_off-dt); // end of on-time reached
+	}
+
+	return (ret); 
+}
+
+
 //__________________________General Arduino Routines_____________________________________
 extern "C" void setup() {
   // put your setup code here, to run once:
+
+
+  // set the Time library to use Teensy 3.0's RTC to keep time
+  setSyncProvider(getTeensy3Time);
+  delay(100);
+  if (timeStatus()!= timeSet) {
+    Serial.println("Unable to sync with the RTC");
+  } else {
+    Serial.println("RTC has set the system time");
+  }
+
   uint32_t nsec = record_or_sleep();
   if(0) if(nsec>0)
   { SGTL5000_disable();
@@ -118,7 +139,6 @@ extern "C" void setup() {
   SGTL5000_modification(FSI); // must be called after I2S initialization stabilized (0: 8kHz, 1: 16 kHz 2:32 kHz, 3:44.1 kHz, 4:48 kHz, 5:96 kHz, 6:192 kHz)
   
   uSD.init();
-
   uSD.chDir();
   
   #if DO_DEBUG>0
@@ -153,46 +173,39 @@ void loop() {
     // advance buffer pointer
     outptr+=128; // (128 shorts)
     //
-    // if necessary reset buffer pointer and write to disk
-    // buffersize should be always a multiple of 512 bytes
-    if(outptr == (diskBuffer+BUFFERSIZE))
+    // check if we should record, close file or hibernate
+    int32_t nsec = record_or_sleep();
+    int mustClose = nsec;
+    if((nsec<0) ||(outptr == (diskBuffer+BUFFERSIZE)))
     {
-      outptr = diskBuffer;
- 
-      // write to disk ( this handles also opening of files)
       if(state>=0)
-        state=uSD.write(diskBuffer,BUFFERSIZE); // this is blocking
+        state=uSD.write(diskBuffer,outptr-diskBuffer, mustClose); // this is blocking
+      outptr = diskBuffer;
+    }
 
-      if(state==0)
-      {
-        uint32_t nsec = record_or_sleep();
-        if(nsec>0) 
-        { uSD.exit();
-          SGTL5000_disable();
-          I2S_stopClock();
-          setWakeupCallandSleep(nsec);      
-        }
-      }
+    if(state==0 && (nsec>0))  // if file is closed and acquisition ended
+    {  uSD.exit();
+        SGTL5000_disable();
+        I2S_stopClock();
+        setWakeupCallandSleep(nsec);      
     }
   }
-  else
-  {  // queue is empty
-    // do nothing
-  }
 
-   #if DO_DEBUG>0
+  #if DO_DEBUG>0
     // some statistics on progress
     static uint32_t loopCount=0;
     static uint32_t t0=0;
     loopCount++;
     if(millis()>t0+1000)
-    {  Serial.printf("loop: %5d %4d; %4d",
-             loopCount, uSD.getNbuf(),
-             AudioMemoryUsageMax());
+    {  Serial.printf("loop: %5d; %4d %4d %4d",
+             loopCount,
+             AudioMemoryUsageMax(),dropCount, rtc_get() % t_on);
        Serial.println();
        AudioMemoryUsageMaxReset();
-       t0=millis();
+       //
        loopCount=0;
+       dropCount=0;
+       t0=millis();
     }
   #endif
   //
