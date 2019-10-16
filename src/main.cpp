@@ -30,9 +30,14 @@
   AudioInputI2S         acq;
 
   #include "m_queue.h"
-  mRecordQueue<MQUEU> queue1;
+  mRecordQueue<MQUEU> queue[NCH];
 
-  AudioConnection     patchCord1(acq,SEL_LR, queue1,0);
+#if NCH == 1
+  AudioConnection     patchCord1(acq,SEL_LR, queue[0],0);
+#elif NCH == 2
+  AudioConnection     patchCord1(acq,0, queue[0],0);
+  AudioConnection     patchCord2(acq,1, queue[1],0);
+#endif
 
   #include "control_sgtl5000.h"
   AudioControlSGTL5000 audioShield;
@@ -42,7 +47,7 @@
 #include "logger_if.h"
 #include "hibernate.h"
 
-// utility for logger
+// ************************* utility for logger ***************************************
 char * headerUpdate(void)
 {
   static char header[512];
@@ -154,7 +159,7 @@ extern "C" void setup() {
   #if DO_DEBUG>0
     Serial.println("start");
   #endif
-  queue1.begin();
+  queue[0].begin();
 }
 
 void loop() {
@@ -163,7 +168,7 @@ void loop() {
   static uint32_t tMax=0;
 
   uint32_t t1=micros();
-  if(queue1.available())
+  if(queue[0].available())
   { // have data on queue
     //
     if(newHour()) uSD.chDir();
@@ -178,15 +183,19 @@ void loop() {
        state=1;
     }
     // fetch data from queue
-    int32_t * data = (int32_t *)queue1.readBuffer(); // cast to int32 to speed-up following copy
-    //
-    // copy to disk buffer
-    uint32_t *ptr=(uint32_t *) outptr;
-    for(int ii=0;ii<64;ii++) ptr[ii] = data[ii];
-    queue1.freeBuffer(); 
+    for(int ii=0; ii<NCH; ii++)
+    {
+      int16_t * data = (int16_t *)queue[ii].readBuffer(); // cast to int32 to speed-up following copy
+      //
+      // copy to disk buffer
+      uint16_t *ptr=(uint16_t *) outptr+ii;
+      for(int ii=0;ii<128;ii+=NCH) ptr[ii] = data[ii];
+    }
+
+    for(int ii=0; ii<NCH; ii++)  queue[ii].freeBuffer(); 
     //
     // advance buffer pointer
-    outptr+=128; // (128 shorts)
+    outptr+=(NCH*128); // (128 shorts)
     //
     // check if we should record, close file or hibernate
     int32_t nsec = record_or_sleep();
@@ -217,13 +226,13 @@ void loop() {
     if(millis()>t0+1000)
     {  Serial.printf("loop: %5d; %4d %4d %4d %6d %4d",
              loopCount,
-             AudioMemoryUsageMax(), uSD.nCount, queue1.dropCount, tMax, rtc_get() % t_on);
+             AudioMemoryUsageMax(), uSD.nCount, queue[0].dropCount, tMax, rtc_get() % t_on);
        Serial.println();
        AudioMemoryUsageMaxReset();
        //
        uSD.nCount=0;
        loopCount=0;
-       queue1.dropCount=0;
+       queue[0].dropCount=0;
        tMax=0;
        //
        t0=millis();
