@@ -20,17 +20,20 @@
  * THE SOFTWARE.
  */
 
-#define DO_DEBUG 1
-#define FSI 5// desired sampling frequency index
-#define NCH 1
-#define SEL_LR 1  // record only a single channel (0 left, 1 right)
-
 uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 240000, 360000};
 /*
  * NOTE: changing frequency impacts the macros 
  *      AudioProcessorUsage and AudioProcessorUsageMax
  * defined in stock AudioStream.h
  */
+
+#define DO_DEBUG 1
+#define FSI 5// desired sampling frequency index
+#define NCH 1
+#define SEL_LR 1  // record only a single channel (0 left, 1 right)
+
+#define AUDIO_SELECT AUDIO_INPUT_LINEIN 
+//#define AUDIO_SELECT AUDIO_INPUT_MIC
 
 #if defined(__MK20DX256__)
   #define MQUEU (100/NCH) // number of buffers in aquisition queue

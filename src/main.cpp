@@ -48,16 +48,19 @@ char * headerUpdate(void)
   static char header[512];
   sprintf(&header[0], "WMXZ");
   
-//  struct tm tx = seconds2tm(RTC_TSR);
-  sprintf(&header[5], "%04d_%02d_%02d_%02d_%02d_%02d", year(), month(), day(), hour(), minute(), second());
-  //
+  sprintf(&header[4], "%04d_%02d_%02d_%02d_%02d_%02d", year(), month(), day(), hour(), minute(), second());
+  header[23]=0;
+
   // add more info to header
   //
   uint32_t *ptr = (uint32_t*) &header[24];
-  ptr[0] = fsamps[FSI];
-  ptr[1] = (uint32_t) a_on;
-  ptr[2] = (uint32_t) a_off;
-  ptr[3] = (uint32_t) t_on;
+  ptr[0]=millis();
+  ptr[1]=micros();
+
+  ptr[2] = fsamps[FSI];
+  ptr[3] = (uint32_t) a_on;
+  ptr[4] = (uint32_t) a_off;
+  ptr[5] = (uint32_t) t_on;
 
   return header;
 }
@@ -65,12 +68,12 @@ char * headerUpdate(void)
 //******************************Auxillary functions **********************
 #include "SdFs.h"
 #include "TimeLib.h"
-time_t getTeensy3Time() { return Teensy3Clock.get(); }
+time_t getTime() { return Teensy3Clock.get(); }
 
 uint16_t generateDirectory(char *filename)
 {
-  sprintf(filename, "%s_%04d%02d%02d", "T36", 
-             year(), month(), day());
+  sprintf(filename, "%s_%04d%02d%02d_&02d", "T36", 
+             year(), month(), day(), hour());
   #if DO_DEBUG>0
     Serial.println(filename);
   #endif
@@ -83,6 +86,15 @@ uint16_t generateFilename(char *filename)
 	return 1;
 }
 
+uint16_t newHour(void)
+{
+  static int lastHour=-1;
+  int _hour = hour();
+  if(_hour == lastHour) return 0;
+  lastHour = _hour;
+  return 1;
+}
+
 int32_t record_or_sleep(void)
 {
 	uint32_t tt = (uint32_t) now();
@@ -93,7 +105,7 @@ int32_t record_or_sleep(void)
 	static uint32_t tso=0;
 	if(tsx < tso) ret = -1; // close this file
 	tso=tsx;
-  return ret;
+
 	// end of acquisition?
 	if(a_off>0)
 	{
@@ -109,9 +121,8 @@ int32_t record_or_sleep(void)
 extern "C" void setup() {
   // put your setup code here, to run once:
 
-
   // set the Time library to use Teensy 3.0's RTC to keep time
-  setSyncProvider(getTeensy3Time);
+  setSyncProvider(getTime);
   delay(100);
   if (timeStatus()!= timeSet) {
     Serial.println("Unable to sync with the RTC");
@@ -132,14 +143,13 @@ extern "C" void setup() {
   
   AudioMemory (MQUEU+6);
   audioShield.enable();
-  audioShield.inputSelect(AUDIO_INPUT_LINEIN);  //AUDIO_INPUT_LINEIN or AUDIO_INPUT_MIC
+  audioShield.inputSelect(AUDIO_SELECT);  //AUDIO_INPUT_LINEIN or AUDIO_INPUT_MIC
    //
   I2S_modification(fsamps[FSI],32);
   delay(1);
   SGTL5000_modification(FSI); // must be called after I2S initialization stabilized (0: 8kHz, 1: 16 kHz 2:32 kHz, 3:44.1 kHz, 4:48 kHz, 5:96 kHz, 6:192 kHz)
   
   uSD.init();
-  uSD.chDir();
   
   #if DO_DEBUG>0
     Serial.println("start");
@@ -152,7 +162,10 @@ void loop() {
   static int16_t state=0; // 0: open new file, -1: last file
 
   if(queue1.available())
-  {  // have data on queue
+  { // have data on queue
+    //
+    if(newHour()) uSD.chDir();
+    //
     if(state==0)
     { // generate header before file is opened
        uint32_t *header=(uint32_t *) headerUpdate();
@@ -197,12 +210,13 @@ void loop() {
     static uint32_t t0=0;
     loopCount++;
     if(millis()>t0+1000)
-    {  Serial.printf("loop: %5d; %4d %4d %4d",
+    {  Serial.printf("loop: %5d; %4d %4d %4d %4d",
              loopCount,
-             AudioMemoryUsageMax(),dropCount, rtc_get() % t_on);
+             AudioMemoryUsageMax(), uSD.nCount, dropCount, rtc_get() % t_on);
        Serial.println();
        AudioMemoryUsageMaxReset();
        //
+       uSD.nCount=0;
        loopCount=0;
        dropCount=0;
        t0=millis();

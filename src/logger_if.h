@@ -49,6 +49,7 @@ class c_uSD
     void chDir(void);
     int16_t write(int16_t * data, int32_t ndat, int mustClose);
 
+    uint32_t nCount=0;
     
   private:
     int16_t state; // 0 initialized; 1 file open; 2 data written; 3 to be closed
@@ -124,6 +125,7 @@ int16_t c_uSD::write(int16_t *data, int32_t ndat, int mustClose)
   {  // write to disk
     state=2;
     mFS.write((unsigned char *) data, 2*ndat);
+    nCount++;
     if(mustClose) state=3;
   }
   
