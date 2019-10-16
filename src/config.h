@@ -54,3 +54,5 @@ uint32_t a_on = 60; // acquisition on time
 uint32_t a_off = 0; // acquisition off time
 uint32_t t_on = 20; // file on time
 
+#define DirPrefix "DIR"
+#define FilePrefix "WMXZ"

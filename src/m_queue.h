@@ -34,8 +34,6 @@
 
 #include "AudioStream.h"
 
-uint32_t dropCount=0;
-
 //#define MQ 53
 template <int MQ>
 class mRecordQueue : public AudioStream
@@ -45,12 +43,15 @@ public:
 		userblock(NULL), head(0), tail(0), enabled(0) { }
    
 	void begin(void) {  clear();	 enabled = 1;	}
-  void end(void) { enabled = 0; }
+    void end(void) { enabled = 0; }
 	int available(void);
 	void clear(void);
 	void * readBuffer(void);
 	void freeBuffer(void);
 	virtual void update(void);
+
+	uint32_t dropCount=0;
+
 private:
 	audio_block_t *inputQueueArray[1];
 	audio_block_t * volatile queue[MQ];

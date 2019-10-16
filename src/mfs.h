@@ -44,19 +44,21 @@ const uint64_t PRE_ALLOCATE_SIZE = 8ULL << 20;
 /************************** File System Interface****************/
 #if USE_FS == SdFS
 
-#include "SdFs.h"
+#include "SdFat-beta.h"
 #include "TimeLib.h"
 
+//------------------------------------------------------------------------------
 // Call back for file timestamps.  Only called for file create and sync().
-void dateTime(uint16_t* date, uint16_t* time) {
-
-//  struct tm tx=seconds2tm(RTC_TSR);
-    
+void dateTime(uint16_t* date, uint16_t* time, uint8_t* ms10) 
+{ 
   // Return date using FS_DATE macro to format fields.
   *date = FS_DATE(year(), month(), day());
 
   // Return time using FS_TIME macro to format fields.
   *time = FS_TIME(hour(), minute(), second());
+  
+  // Return low time bits in units of 10 ms.
+  *ms10 = second() & 1 ? 100 : 0;
 }
 
 #if defined(__MK20DX256__)

@@ -18,7 +18,7 @@ TARGET_NAME      := record_sgtl5000
 BOARD_ID         := TEENSY36
 
 LIBS_SHARED_BASE := C:\Users\Walter\Documents\Arduino\libraries
-LIBS_SHARED      := SdFs 
+LIBS_SHARED      := SdFat-beta-master 
 
 LIBS_LOCAL_BASE  := C:\Users\Walter\Documents\arduino-1.8.8\hardware\teensy\avr\libraries
 LIBS_LOCAL       := SPI Time Audio Wire SD SerialFlash

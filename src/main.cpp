@@ -66,13 +66,12 @@ char * headerUpdate(void)
 }
 
 //******************************Auxillary functions **********************
-#include "SdFs.h"
 #include "TimeLib.h"
 time_t getTime() { return Teensy3Clock.get(); }
 
 uint16_t generateDirectory(char *filename)
 {
-  sprintf(filename, "%s_%04d%02d%02d_&02d", "T36", 
+  sprintf(filename, "%s_%04d%02d%02d_%02d", DirPrefix, 
              year(), month(), day(), hour());
   #if DO_DEBUG>0
     Serial.println(filename);
@@ -81,7 +80,7 @@ uint16_t generateDirectory(char *filename)
 }
 uint16_t generateFilename(char *filename)
 {
-	sprintf(filename, "%s_%02d%02d%02d.bin", "WMXZ",
+	sprintf(filename, "%s_%02d%02d%02d.bin", FilePrefix,
 		      	  hour(), minute(), second());
 	return 1;
 }
@@ -160,7 +159,9 @@ extern "C" void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   static int16_t state=0; // 0: open new file, -1: last file
+  static uint32_t tMax=0;
 
+  uint32_t t1=micros();
   if(queue1.available())
   { // have data on queue
     //
@@ -203,6 +204,9 @@ void loop() {
         setWakeupCallandSleep(nsec);      
     }
   }
+  uint32_t t2=micros();
+  if(t2-t1>tMax) tMax=(t2-t1);
+
 
   #if DO_DEBUG>0
     // some statistics on progress
@@ -210,15 +214,17 @@ void loop() {
     static uint32_t t0=0;
     loopCount++;
     if(millis()>t0+1000)
-    {  Serial.printf("loop: %5d; %4d %4d %4d %4d",
+    {  Serial.printf("loop: %5d; %4d %4d %4d %6d %4d",
              loopCount,
-             AudioMemoryUsageMax(), uSD.nCount, dropCount, rtc_get() % t_on);
+             AudioMemoryUsageMax(), uSD.nCount, queue1.dropCount, tMax, rtc_get() % t_on);
        Serial.println();
        AudioMemoryUsageMaxReset();
        //
        uSD.nCount=0;
        loopCount=0;
-       dropCount=0;
+       queue1.dropCount=0;
+       tMax=0;
+       //
        t0=millis();
     }
   #endif
