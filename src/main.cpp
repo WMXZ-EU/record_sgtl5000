@@ -78,6 +78,7 @@ uint16_t generateDirectory(char *filename)
   #endif
   return 1;
 }
+
 uint16_t generateFilename(char *filename)
 {
 	sprintf(filename, "%s_%02d%02d%02d.bin", FilePrefix,
@@ -100,13 +101,13 @@ int32_t record_or_sleep(void)
 	int32_t ret = 0; // default: keep recording
 
 	// end of file?
-	uint32_t tsx = tt % t_on;
+	uint32_t tsx = tt % t_on; // time into file
 	static uint32_t tso=0;
-	if(tsx < tso) ret = -1; // close this file
+	if(tsx < tso) ret = -1; // if wrap around close this file
 	tso=tsx;
 
 	// end of acquisition?
-	if(a_off>0)
+	if(a_off>0) // we define a off time
 	{
 		uint32_t dt = tt % (a_on+a_off);
 		if(dt>=a_on) ret = (a_on+a_off-dt); // end of on-time reached
