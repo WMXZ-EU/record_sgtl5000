@@ -159,7 +159,7 @@ extern "C" void setup() {
   #if DO_DEBUG>0
     Serial.println("start");
   #endif
-  queue[0].begin();
+  for(int ii=0; ii<NCH; ii++) queue[ii].begin();
 }
 
 void loop() {
@@ -168,7 +168,7 @@ void loop() {
   static uint32_t tMax=0;
 
   uint32_t t1=micros();
-  if(queue[0].available())
+  if(queue[NCH-1].available())
   { // have data on queue
     //
     if(newHour()) uSD.chDir();
