@@ -32,6 +32,7 @@
 //#include "kinetis.h"
 #include "core_pins.h"
 
+#if defined(__MK66FX1M0__)
 // attempt to generate dividers programmatically 
 // always better to check 
 void I2S_dividers(uint32_t *iscl, uint32_t fsamp, uint32_t nbits) 
@@ -67,7 +68,6 @@ void I2S_modification(uint32_t fsamp, uint16_t nbits)
       Serial.printf("%d %d: %d %d %d %d %d %d %d\n\r", 
           F_CPU, fcpu, fsamp, (int)fs, (int) mclk, nbits,iscl[0]+1,iscl[1]+1,iscl[2]+1); 
   #endif 
- 
   // stop I2S 
   I2S0_RCSR &= ~(I2S_RCSR_RE | I2S_RCSR_BCE); 
  
@@ -109,6 +109,73 @@ void I2S_stop(void)
 {
     I2S0_RCSR &= ~(I2S_RCSR_RE | I2S_RCSR_BCE);
 }
+
+ #elif defined(__IMXRT1062__)
+ #include "imxrt_hw.h"
+ void I2S_start(void)
+ {
+  I2S1_RCSR |= (I2S_RCSR_RE | I2S_RCSR_BCE); 
+  I2S1_TCSR |= (I2S_TCSR_TE | I2S_TCSR_BCE); 
+ }
+ void I2S_stop(void)
+ {
+   // stop I2S 
+  I2S1_RCSR &= ~(I2S_RCSR_RE | I2S_RCSR_BCE); 
+  I2S1_TCSR &= ~(I2S_TCSR_TE | I2S_TCSR_BCE); 
+ }
+ void I2S_modification(uint32_t fsamp, uint16_t nbits) 
+{
+  I2S_stop();
+  // modify sampling frequency 
+	CCM_CCGR5 |= CCM_CCGR5_SAI1(CCM_CCGR_ON);
+//PLL:
+	int fs = fsamp;
+	// PLL between 27*24 = 648MHz und 54*24=1296MHz
+	int n1 = 4; //SAI prescaler 4 => (n1*n2) = multiple of 4
+	int n2 = 1 + (24000000 * 27) / (fs * 256 * n1);
+
+	double C = ((double)fs * 256 * n1 * n2) / 24000000;
+	int c0 = C;
+	int c2 = 10000;
+	int c1 = C * c2 - (c0 * c2);
+	set_audioClock(c0, c1, c2, true);
+
+	// clear SAI1_CLK register locations
+	CCM_CSCMR1 = (CCM_CSCMR1 & ~(CCM_CSCMR1_SAI1_CLK_SEL_MASK))
+		   | CCM_CSCMR1_SAI1_CLK_SEL(2); // &0x03 // (0,1,2): PLL3PFD0, PLL5, PLL4
+	CCM_CS1CDR = (CCM_CS1CDR & ~(CCM_CS1CDR_SAI1_CLK_PRED_MASK | CCM_CS1CDR_SAI1_CLK_PODF_MASK))
+		   | CCM_CS1CDR_SAI1_CLK_PRED(n1-1) // &0x07
+		   | CCM_CS1CDR_SAI1_CLK_PODF(n2-1); // &0x3f
+
+	IOMUXC_GPR_GPR1 = (IOMUXC_GPR_GPR1 & ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK))
+			| (IOMUXC_GPR_GPR1_SAI1_MCLK_DIR | IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL(0));	//Select MCLK
+
+  // restart I2S 
+  I2S_start();
+}
+
+void I2S_stopClock(void)
+{
+//  SIM_SCGC6 &= ~SIM_SCGC6_I2S;
+//  SIM_SCGC7 &= ~SIM_SCGC7_DMA;
+//  SIM_SCGC6 &= ~SIM_SCGC6_DMAMUX;
+}
+
+void I2S_startClock(void)
+{
+//  SIM_SCGC6 |= SIM_SCGC6_I2S;
+//  SIM_SCGC7 |= SIM_SCGC7_DMA;
+//  SIM_SCGC6 |= SIM_SCGC6_DMAMUX;
+
+	CORE_PIN23_CONFIG = 3;  //1:MCLK
+	CORE_PIN21_CONFIG = 3;  //1:RX_BCLK
+	CORE_PIN20_CONFIG = 3;  //1:RX_SYNC
+	CORE_PIN7_CONFIG  = 3;  //1:TX_DATA0	  
+	CORE_PIN8_CONFIG  = 3;  //1:RX_DATA0
+}
+
+ #endif
+
 
 // ********************************************** following is to change SGTL5000 samling rates ********************
 #define SGTL5000_I2C_ADDR  0x0A  // CTRL_ADR0_CS pin low (normal configuration)

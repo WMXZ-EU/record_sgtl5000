@@ -31,6 +31,8 @@
 #include "core_pins.h"
 
 /******************* Seting Alarm **************************/
+#ifdef __MK66FX1M0__
+
 #define RTC_IER_TAIE_MASK       0x4u
 #define RTC_SR_TAF_MASK         0x4u
 
@@ -143,4 +145,12 @@ void setWakeupCallandSleep(uint32_t nsec)
    yield();
    gotoSleep();
 }
+#endif
+
+#ifdef __IMXRT1062__
+void setWakeupCallandSleep(uint32_t nsec)
+{
+
+}
+#endif
 #endif

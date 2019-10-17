@@ -24,11 +24,10 @@
 #ifndef _LOGGER_IF_H
 #define _LOGGER_IF_H
 
-#include "kinetis.h"
 #include "core_pins.h"
 
 //==================== local uSD interface ========================================
-// this implementation used SdFs from Bill Greiman
+// this implementation used SdFat-beta from Bill Greiman
 // which needs to be installed as local library 
 
 #ifndef BUFFERSIZE
@@ -64,27 +63,17 @@ c_uSD uSD;
  *  Logging interface support / implementation functions 
  */
 
-uint16_t generateDirectory(char *filename);
-uint16_t generateFilename(char *filename);
+char * generateDirectory(char *filename);
+char * generateFilename(char *filename);
 
 char *makeDirname(void)
 { static char dirname[80];
-
-  generateDirectory(dirname);
-  #if DO_DEBUG>0
-    Serial.println(dirname);
-  #endif
-  return dirname;  
+  return generateDirectory(dirname);
 }
 
 char *makeFilename(void)
-{   static char filename[80];
-
-  generateFilename(filename);
-  #if DO_DEBUG>0
-    Serial.println(filename);
-  #endif
-  return filename;  
+{ static char filename[80];
+  return generateFilename(filename);
 }
 
 char * headerUpdate(void);

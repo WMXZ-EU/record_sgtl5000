@@ -74,21 +74,22 @@ char * headerUpdate(void)
 #include "TimeLib.h"
 time_t getTime() { return Teensy3Clock.get(); }
 
-uint16_t generateDirectory(char *filename)
+char * generateDirectory(char *filename)
 {
-  sprintf(filename, "%s_%04d%02d%02d_%02d", DirPrefix, 
-             year(), month(), day(), hour());
+  sprintf(filename, "/%s_%04d%02d%02d_%02d", DirPrefix, year(), month(), day(), hour());
   #if DO_DEBUG>0
     Serial.println(filename);
   #endif
-  return 1;
+  return filename;
 }
 
-uint16_t generateFilename(char *filename)
+char * generateFilename(char *filename)
 {
-	sprintf(filename, "%s_%02d%02d%02d.bin", FilePrefix,
-		      	  hour(), minute(), second());
-	return 1;
+	sprintf(filename, "%s_%02d%02d%02d.bin", FilePrefix, hour(), minute(), second());
+  #if DO_DEBUG>0
+    Serial.println(filename);
+  #endif
+  return filename;
 }
 
 uint16_t newHour(void)
@@ -143,7 +144,7 @@ extern "C" void setup() {
   }
 
   #if DO_DEBUG>0
-    while(!Serial ) asm("wfi");
+    while(!Serial );// asm("wfi");
   #endif
   
   AudioMemory (MQUEU+6);
@@ -239,6 +240,6 @@ void loop() {
     }
   #endif
   //
-  asm("wfi"); // to save some power switch off idle cpu
+//  asm("wfi"); // to save some power switch off idle cpu
 }
 

@@ -41,6 +41,8 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 24
   #define MQUEU (200/NCH) // number of buffers in aquisition queue
 #elif defined(__MK66FX1M0__)
   #define MQUEU (600/NCH) // number of buffers in aquisition queue
+#elif defined(__IMXRT1062__)
+  #define MQUEU (900/NCH) // number of buffers in aquisition queue
 #else
   #define MQUEU 53 // number of buffers in aquisition queue
 #endif

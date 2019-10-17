@@ -15,17 +15,44 @@ export SHELL
 
 TARGET_NAME      := record_sgtl5000
 
-BOARD_ID         := TEENSY36
+#MCU   := mk66fx1m0
+MCU   := imxrt1062
 
-LIBS_SHARED_BASE := C:\Users\Walter\Documents\Arduino\libraries
+ROOT_LOCAL := C:\Users\Walter\Documents\Arduino
+ROOT_TD := C:\Users\Walter\Documents\arduino-1.8.8\hardware
+
+LIBS_SHARED_BASE := $(ROOT_LOCAL)\libraries
 LIBS_SHARED      := SdFat-beta-master 
 
-LIBS_LOCAL_BASE  := C:\Users\Walter\Documents\arduino-1.8.8\hardware\teensy\avr\libraries
+LIBS_LOCAL_BASE  := $(ROOT_TD)\teensy\avr\libraries
 LIBS_LOCAL       := SPI Time Audio Wire SD SerialFlash
 
-CORE_BASE        := C:\Users\Walter\Documents\arduino-1.8.8\hardware\teensy\avr\cores\teensy3
-GCC_BASE         := C:\Users\Walter\Documents\arduino-1.8.8\hardware\tools\arm
-UPL_PJRC_B       := C:\Users\Walter\Documents\arduino-1.8.8\hardware\tools
+ifeq ($(MCU),mk66fx1m0)
+BOARD_ID    := TEENSY36
+Family := teensy3
+FLAGS_CPU   := -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
+LIBS        := -larm_cortexM4lf_math -lm
+DEFINES     := -D__MK66FX1M0__ 
+DEFINES     += -DF_CPU=96000000
+endif
+
+ifeq ($(MCU),imxrt1062)
+BOARD_ID    := TEENSY40
+Family := teensy4
+FLAGS_CPU   := -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
+LIBS        := -larm_cortexM4lf_math -lm
+DEFINES     := -D__IMXRT1062__ 
+DEFINES     += -DF_CPU=396000000
+endif
+
+$(info $(DEFINES))
+DEFINES     += -DTEENSYDUINO=148 -DARDUINO=10808
+DEFINES     += -DUSB_SERIAL -DLAYOUT_US_ENGLISH
+
+
+CORE_BASE   	 := $(ROOT_TD)\teensy\avr\cores\$(Family)
+GCC_BASE         := $(ROOT_TD)\tools\arm
+UPL_PJRC_B       := $(ROOT_TD)\tools
 UPL_TYCMD_B      := 
 UPL_CLICMD_B     := 
 
@@ -40,9 +67,7 @@ TARGET_LST  := $(BIN)\$(TARGET_NAME).lst
 
 TARGET_MAP	:= $(BIN)/$(TARGET_NAME).map
 
-MCU   := mk66fx1m0
 
-FLAGS_CPU   := -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
 FLAGS_OPT   := -O3
 FLAGS_COM   := -g -Wall -ffunction-sections -fdata-sections -nostdlib -MMD
 FLAGS_LSP   := 
@@ -53,13 +78,6 @@ FLAGS_S     := -x assembler-with-cpp
 FLAGS_LD    := -Wl,--gc-sections,--relax
 FLAGS_LD    += -Wl,--defsym=__rtc_localtime=$(shell powershell [int](Get-Date -UFormat +%s))
 FLAGS_LD    += -Wl,-Map=$(TARGET_MAP)
-LIBS        := -larm_cortexM4lf_math -lm
-LD_SCRIPT   := mk66fx1m0.ld
-
-DEFINES     := -D__MK66FX1M0__ -DTEENSYDUINO=147 -DARDUINO=10808
-#DEFINES     += -DF_CPU=96000000 -DUSB_MTPDISK -DLAYOUT_US_ENGLISH
-DEFINES     += -DF_CPU=96000000 -DUSB_SERIAL -DLAYOUT_US_ENGLISH
-#DEFINES     += -DCH6
 
 USR_SRC     := src
 LIB_SRC     := lib
@@ -71,6 +89,7 @@ S_FLAGS     := $(FLAGS_CPU) $(FLAGS_OPT) $(FLAGS_COM) $(DEFINES) $(FLAGS_S)
 LD_FLAGS    := $(FLAGS_CPU) $(FLAGS_OPT) $(FLAGS_LSP) $(FLAGS_LD)
 AR_FLAGS    := rcs
 
+LD_SCRIPT   := $(MCU).ld
 
 #******************************************************************************
 # BINARIES

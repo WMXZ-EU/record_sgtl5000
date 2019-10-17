@@ -69,6 +69,10 @@ void dateTime(uint16_t* date, uint16_t* time, uint8_t* ms10)
   // Use FIFO SDIO or DMA_SDIO
   #define SD_CONFIG SdioConfig(FIFO_SDIO)
   //#define SD_CONFIG SdioConfig(DMA_SDIO)
+#elif defined(__IMXRT1062__)
+  #define SD_CS 10
+  #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
+  //#define SD_CONFIG SdioConfig(FIFO_SDIO)
 #endif
 
 
@@ -82,6 +86,11 @@ class c_mFS
     void init(void)
     { Serial.println("Using SdFS");
       #if defined(__MK20DX256__)
+          // Initialize the SD card
+        SPI.setMOSI(7);
+        SPI.setSCK(14);
+      #endif  
+      #if defined(__IMXRT1062__)
           // Initialize the SD card
         SPI.setMOSI(7);
         SPI.setSCK(14);
