@@ -148,9 +148,157 @@ void setWakeupCallandSleep(uint32_t nsec)
 #endif
 
 #ifdef __IMXRT1062__
+/*********************************************************************************/
+// see also https://github.com/manitou48/teensy4/blob/master/rtc.ino
+#define SNVS_DEFAULT_PGD_VALUE (0x41736166U)
+#define SNVS_LPSR_PGD_MASK                       (0x8U)
+#define SNVS_LPSRTCMR      (IMXRT_SNVS.offset050)
+#define SNVS_LPSRTCLR      (IMXRT_SNVS.offset054)
+//----------------------------------------------------
+#define SNVS_LPTAR        (IMXRT_SNVS.offset058)
+
+#define SNVS_LPCR_SRTC_ENV_MASK         (0x1U)
+#define SNVS_LPCR_SRTC_ENV(x)           (((uint32_t)(((uint32_t)(x)) << 0U)) & SNVS_LPCR_SRTC_ENV_MASK)
+
+#define SNVS_LPCR_LPTA_EN_MASK          (0x2U)
+#define SNVS_LPCR_LPTA_EN(x)            (((uint32_t)(((uint32_t)(x)) << 1U)) & SNVS_LPCR_LPTA_EN_MASK)
+
+#define SNVS_LPCR_MC_ENV_MASK           (0x4U)
+#define SNVS_LPCR_MC_ENV(x)             (((uint32_t)(((uint32_t)(x)) << 2U)) & SNVS_LPCR_MC_ENV_MASK)
+
+#define SNVS_LPCR_LPWUI_EN_MASK         (0x8U)
+#define SNVS_LPCR_LPWUI_EN(x)           (((uint32_t)(((uint32_t)(x)) << 3U)) & SNVS_LPCR_LPWUI_EN_MASK)
+
+#define SNVS_LPCR_SRTC_INV_EN_MASK      (0x10U)
+#define SNVS_LPCR_SRTC_INV_EN(x)        (((uint32_t)(((uint32_t)(x)) << 4U)) & SNVS_LPCR_SRTC_INV_EN_MASK)
+
+#define SNVS_LPCR_DP_EN_MASK            (0x20U)
+#define SNVS_LPCR_DP_EN(x)              (((uint32_t)(((uint32_t)(x)) << 5U)) & SNVS_LPCR_DP_EN_MASK)
+
+#define SNVS_LPCR_TOP_MASK              (0x40U)
+#define SNVS_LPCR_TOP(x)                (((uint32_t)(((uint32_t)(x)) << 6U)) & SNVS_LPCR_TOP_MASK)
+
+#define SNVS_LPCR_PWR_GLITCH_EN_MASK    (0x80U)
+#define SNVS_LPCR_PWR_GLITCH_EN(x)      (((uint32_t)(((uint32_t)(x)) << 7U)) & SNVS_LPCR_PWR_GLITCH_EN_MASK)
+
+#define SNVS_LPCR_LPCALB_EN_MASK        (0x100U)
+#define SNVS_LPCR_LPCALB_EN(x)          (((uint32_t)(((uint32_t)(x)) << 8U)) & SNVS_LPCR_LPCALB_EN_MASK)
+
+#define SNVS_LPCR_LPCALB_VAL_MASK       (0x7C00U)
+#define SNVS_LPCR_LPCALB_VAL(x)         (((uint32_t)(((uint32_t)(x)) << 10U)) & SNVS_LPCR_LPCALB_VAL_MASK)
+
+#define SNVS_LPCR_BTN_PRESS_TIME_MASK   (0x30000U)
+#define SNVS_LPCR_BTN_PRESS_TIME(x)     (((uint32_t)(((uint32_t)(x)) << 16U)) & SNVS_LPCR_BTN_PRESS_TIME_MASK)
+
+#define SNVS_LPCR_DEBOUNCE_MASK         (0xC0000U)
+#define SNVS_LPCR_DEBOUNCE(x)           (((uint32_t)(((uint32_t)(x)) << 18U)) & SNVS_LPCR_DEBOUNCE_MASK)
+
+#define SNVS_LPCR_ON_TIME_MASK          (0x300000U)
+#define SNVS_LPCR_ON_TIME(x)            (((uint32_t)(((uint32_t)(x)) << 20U)) & SNVS_LPCR_ON_TIME_MASK)
+
+#define SNVS_LPCR_PK_EN_MASK            (0x400000U)
+#define SNVS_LPCR_PK_EN(x)              (((uint32_t)(((uint32_t)(x)) << 22U)) & SNVS_LPCR_PK_EN_MASK)
+
+#define SNVS_LPCR_PK_OVERRIDE_MASK      (0x800000U)
+#define SNVS_LPCR_PK_OVERRIDE(x)        (((uint32_t)(((uint32_t)(x)) << 23U)) & SNVS_LPCR_PK_OVERRIDE_MASK)
+
+#define SNVS_LPCR_GPR_Z_DIS_MASK        (0x1000000U)
+#define SNVS_LPCR_GPR_Z_DIS(x)          (((uint32_t)(((uint32_t)(x)) << 24U)) & SNVS_LPCR_GPR_Z_DIS_MASK)
+
+#define SNVS_LPSR_LPTA                  (0x1U)
+
+void rtc_init() 
+{ CCM_CCGR2 |= CCM_CCGR2_IOMUXC_SNVS(CCM_CCGR_ON);
+  SNVS_LPGPR = SNVS_DEFAULT_PGD_VALUE;
+  SNVS_LPSR = SNVS_LPSR_PGD_MASK;
+  // ? calibration
+  // ? tamper pins
+  
+  SNVS_LPCR &= ~SNVS_LPCR_LPTA_EN_MASK; // clear alarm
+  while (SNVS_LPCR & SNVS_LPCR_LPTA_EN_MASK); 
+  SNVS_LPTAR=0;
+
+  SNVS_LPCR |= 1;             // start RTC
+  while (!(SNVS_LPCR & 1));
+}
+
+extern void *__rtc_localtime; 
+void rtc_set_time(uint32_t secs) 
+{ //uint32_t secs = 1547051415;
+  SNVS_LPCR &= ~1;   // stop RTC
+  while (SNVS_LPCR & 1);
+  SNVS_LPSRTCMR = (uint32_t)(secs >> 17U);
+  SNVS_LPSRTCLR = (uint32_t)(secs << 15U);
+  SNVS_LPCR |= 1;             // start RTC
+  while (!(SNVS_LPCR & 1));
+}
+
+uint32_t rtc_secs() {
+  uint32_t seconds = 0;
+  uint32_t tmp = 0;
+
+  /* Do consecutive reads until value is correct */
+  do
+  { seconds = tmp;
+    tmp = (SNVS_LPSRTCMR << 17U) | (SNVS_LPSRTCLR >> 15U);
+  } while (tmp != seconds);
+
+  return seconds;
+}
+
+void rtc_stopAlarm()
+{
+  SNVS_LPSR |= 1;
+  SNVS_LPCR &= ~SNVS_LPCR_LPTA_EN_MASK;
+  while (SNVS_LPCR & SNVS_LPCR_LPTA_EN_MASK); 
+}
+void rtc_isr(void)
+{ 
+  SNVS_LPSR |= 1;
+  Serial.println("Alarm");
+  asm("DSB");
+}
+
+void rtc_initAlarm(uint32_t prio=13)
+{
+  SNVS_LPSR |= 1;
+  attachInterruptVector(IRQ_SNVS_IRQ, rtc_isr);
+  NVIC_SET_PRIORITY(IRQ_SNVS_IRQ, prio*16); // 8 is normal priority
+  NVIC_DISABLE_IRQ(IRQ_SNVS_IRQ);
+}
+
+void rtc_setAlarm(uint32_t alarmSeconds)
+{   uint32_t tmp = SNVS_LPCR; //save control register
+
+    /* disable SRTC alarm interrupt */
+    rtc_stopAlarm();
+
+    SNVS_LPTAR=alarmSeconds;
+    while(SNVS_LPTAR != alarmSeconds);
+
+    NVIC_ENABLE_IRQ(IRQ_SNVS_IRQ);
+
+    SNVS_LPCR = tmp | SNVS_LPCR_LPTA_EN_MASK; // restore control register and set alarm
+    while(!(SNVS_LPCR & SNVS_LPCR_LPTA_EN_MASK)); 
+}
+
+uint32_t rtc_getAlarm()
+{
+  return SNVS_LPTAR;  
+}
+
+void doShutdown(void) 
+{ 
+  SNVS_LPCR |=(1<<6);
+}
+
 void setWakeupCallandSleep(uint32_t nsec)
 {
-
+  rtc_init();
+  rtc_set_time(now());   //LPSRTC will start at 0 otherwise
+  rtc_initAlarm(13);
+  rtc_setAlarm(nsec);
+  doShutdown();
 }
 #endif
 #endif
