@@ -122,10 +122,37 @@ int32_t record_or_sleep(void)
 	return (ret); 
 }
 
+#if defined(__IMXRT1062__)
+extern "C" uint32_t set_arm_clock(uint32_t frequency);
+#endif
 
+#include "arm_math.h"	// micros() synchronization
+extern volatile uint32_t systick_millis_count;
+extern volatile uint32_t systick_cycle_count;
+extern uint32_t systick_safe_read;	 // micros() synchronization
+
+uint32_t m_micros(void)
+{
+	uint32_t ccdelta, usec, smc, scc;
+  do {
+    __LDREXW(&systick_safe_read);
+		smc = systick_millis_count;
+		scc = systick_cycle_count;
+  } while ( __STREXW(1, &systick_safe_read));
+	ccdelta = ARM_DWT_CYCCNT - scc;
+	usec = 1000*smc + (ccdelta/(F_CPU_ACTUAL/1000000));
+	return usec;
+}
 //__________________________General Arduino Routines_____________________________________
 extern "C" void setup() {
   // put your setup code here, to run once:
+
+#if defined(__IMXRT1062__)
+    set_arm_clock(24000000);
+    Serial.print("F_CPU_ACTUAL=");
+    Serial.println(F_CPU_ACTUAL);
+#endif
+
 
   // set the Time library to use Teensy 3.0's RTC to keep time
   setSyncProvider(getTime);
@@ -168,7 +195,7 @@ void loop() {
   static int16_t state=0; // 0: open new file, -1: last file
   static uint32_t tMax=0;
 
-  uint32_t t1=micros();
+  uint32_t t1=m_micros();
   if(queue[NCH-1].available())
   { // have data on queue
     //
@@ -215,7 +242,7 @@ void loop() {
         setWakeupCallandSleep(nsec);      
     }
   }
-  uint32_t t2=micros();
+  uint32_t t2=m_micros();
   if(t2-t1>tMax) tMax=(t2-t1);
 
 

@@ -31,7 +31,7 @@
 #include "core_pins.h"
 
 /******************* Seting Alarm **************************/
-#ifdef __MK66FX1M0__
+#if defined(__MK66FX1M0__)
 
 #define RTC_IER_TAIE_MASK       0x4u
 #define RTC_SR_TAF_MASK         0x4u
@@ -145,13 +145,15 @@ void setWakeupCallandSleep(uint32_t nsec)
    yield();
    gotoSleep();
 }
-#endif
 
-#ifdef __IMXRT1062__
+#elif defined(__IMXRT1062__)
 /*********************************************************************************/
+#define SNVS_LPSR_PGD_MASK              (0x8U)
+#define SNVS_LPCR_LPTA_EN_MASK          (0x2U)
+
+#if 0
 // see also https://github.com/manitou48/teensy4/blob/master/rtc.ino
 #define SNVS_DEFAULT_PGD_VALUE (0x41736166U)
-#define SNVS_LPSR_PGD_MASK                       (0x8U)
 #define SNVS_LPSRTCMR      (IMXRT_SNVS.offset050)
 #define SNVS_LPSRTCLR      (IMXRT_SNVS.offset054)
 //----------------------------------------------------
@@ -160,7 +162,6 @@ void setWakeupCallandSleep(uint32_t nsec)
 #define SNVS_LPCR_SRTC_ENV_MASK         (0x1U)
 #define SNVS_LPCR_SRTC_ENV(x)           (((uint32_t)(((uint32_t)(x)) << 0U)) & SNVS_LPCR_SRTC_ENV_MASK)
 
-#define SNVS_LPCR_LPTA_EN_MASK          (0x2U)
 #define SNVS_LPCR_LPTA_EN(x)            (((uint32_t)(((uint32_t)(x)) << 1U)) & SNVS_LPCR_LPTA_EN_MASK)
 
 #define SNVS_LPCR_MC_ENV_MASK           (0x4U)
@@ -206,7 +207,7 @@ void setWakeupCallandSleep(uint32_t nsec)
 #define SNVS_LPCR_GPR_Z_DIS(x)          (((uint32_t)(((uint32_t)(x)) << 24U)) & SNVS_LPCR_GPR_Z_DIS_MASK)
 
 #define SNVS_LPSR_LPTA                  (0x1U)
-
+#endif
 void rtc_init() 
 { CCM_CCGR2 |= CCM_CCGR2_IOMUXC_SNVS(CCM_CCGR_ON);
   SNVS_LPGPR = SNVS_DEFAULT_PGD_VALUE;
@@ -289,7 +290,8 @@ uint32_t rtc_getAlarm()
 
 void doShutdown(void) 
 { 
-  SNVS_LPCR |=(1<<6);
+  SNVS_LPCR |=(1<<3) ; // enable wake-up
+//  SNVS_LPCR |=(1<<6) ; // turn off power
 }
 
 void setWakeupCallandSleep(uint32_t nsec)
