@@ -37,13 +37,16 @@
 // note SdFS needs CHECK_PROGRAMMING set to 1 in SdSpiCard.cpp
 
 #define USE_FS SdFS
+// NOTE:
+// To compile needs https://github.com/greiman/SdFat-beta and .src the file SdFat.h changed to SdFat-beta.h
+// in SdFatConfig.h SDFAT_FILE_TYPE changed from 1 to 3 to allow exFAT file systems
+//
 
 // Preallocate 8MB file.
 const uint64_t PRE_ALLOCATE_SIZE = 8ULL << 20;
 
 /************************** File System Interface****************/
 #if USE_FS == SdFS
-
 #include "SdFat-beta.h"
 #include "TimeLib.h"
 
