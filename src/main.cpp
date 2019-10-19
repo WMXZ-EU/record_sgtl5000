@@ -234,11 +234,9 @@ void loop() {
     static uint32_t t0=0;
     loopCount++;
     if(millis()>t0+1000)
-    {  Serial.printf("loop: %5d; %4d %4d %4d %6d %4d %d %d",
+    {  Serial.printf("loop: %5d; %4d %4d %4d %6d %4d",
              loopCount,
-             AudioMemoryUsageMax(), uSD.nCount, queue[0].dropCount, tMax, rtc_get() % t_on, 
-             ARM_DWT_CYCCNT-systick_cycle_count,
-             /*1000*systick_millis_count +*/ ((ARM_DWT_CYCCNT-systick_cycle_count)/(F_CPU_ACTUAL/1000000)));
+             AudioMemoryUsageMax(), uSD.nCount, queue[0].dropCount, tMax, rtc_get() % t_on);
        Serial.println();
        AudioMemoryUsageMaxReset();
        //
