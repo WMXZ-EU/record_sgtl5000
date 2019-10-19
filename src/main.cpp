@@ -126,24 +126,6 @@ int32_t record_or_sleep(void)
 extern "C" uint32_t set_arm_clock(uint32_t frequency);
 #endif
 
-#include "arm_math.h"	// micros() synchronization
-extern volatile uint32_t systick_millis_count;
-extern volatile uint32_t systick_cycle_count;
-extern uint32_t systick_safe_read;	 // micros() synchronization
-
-uint32_t m_micros(void)
-{
-	uint32_t ccdelta, usec, smc, scc;
-  do {
-    __LDREXW(&systick_safe_read);
-		smc = systick_millis_count;
-		scc = systick_cycle_count;
-  } while ( __STREXW(1, &systick_safe_read));
-	ccdelta = ARM_DWT_CYCCNT - scc;
-	usec = 1000*smc + (ccdelta/(F_CPU_ACTUAL/1000000));
-	return usec;
-}
-//__________________________General Arduino Routines_____________________________________
 extern "C" void setup() {
   // put your setup code here, to run once:
 
@@ -195,7 +177,7 @@ void loop() {
   static int16_t state=0; // 0: open new file, -1: last file
   static uint32_t tMax=0;
 
-  uint32_t t1=m_micros();
+  uint32_t t1=micros();
   if(queue[NCH-1].available())
   { // have data on queue
     //
@@ -242,7 +224,7 @@ void loop() {
         setWakeupCallandSleep(nsec);      
     }
   }
-  uint32_t t2=m_micros();
+  uint32_t t2=micros();
   if(t2-t1>tMax) tMax=(t2-t1);
 
 
@@ -252,9 +234,11 @@ void loop() {
     static uint32_t t0=0;
     loopCount++;
     if(millis()>t0+1000)
-    {  Serial.printf("loop: %5d; %4d %4d %4d %6d %4d",
+    {  Serial.printf("loop: %5d; %4d %4d %4d %6d %4d %d %d",
              loopCount,
-             AudioMemoryUsageMax(), uSD.nCount, queue[0].dropCount, tMax, rtc_get() % t_on);
+             AudioMemoryUsageMax(), uSD.nCount, queue[0].dropCount, tMax, rtc_get() % t_on, 
+             ARM_DWT_CYCCNT-systick_cycle_count,
+             /*1000*systick_millis_count +*/ ((ARM_DWT_CYCCNT-systick_cycle_count)/(F_CPU_ACTUAL/1000000)));
        Serial.println();
        AudioMemoryUsageMaxReset();
        //
