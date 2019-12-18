@@ -3,10 +3,10 @@
     {
       "name": "VisualTeensy",
       "includePath": [
-        "src/**",
-        "C:/Users/Walter/Documents/Arduino/libraries/**",
-        "C:/Users/Walter/Documents/arduino-1.8.8/hardware/teensy/avr/libraries/**",
-        "C:/Users/Walter/Documents/arduino-1.8.8/hardware/teensy/avr/cores/teensy4/**"
+        "./**",
+        "C:/Users/zimme/Documents/Arduino/libraries/**",
+        "C:/Users/zimme/Documents/arduino-1.8.10/hardware/teensy/avr/libraries/**",
+        "C:/Users/zimme/Documents/arduino-1.8.10/hardware/teensy/avr/cores/teensy4/**"
       ],
       "defines": [
         "__IMXRT1062__",
@@ -16,7 +16,7 @@
         "LAYOUT_US_ENGLISH",
         "ARDUINO"
       ],
-      "compilerPath": "C:/Users/Walter/Documents/arduino-1.8.7/hardware/tools/arm/bin/arm-none-eabi-gcc.exe",
+      "compilerPath": "C:/Users/zimme/Documents/arduino-1.8.10/hardware/tools/arm/bin/arm-none-eabi-gcc.exe",
       "intelliSenseMode": "gcc-x64"
     }
   ],

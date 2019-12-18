@@ -17,9 +17,9 @@ TARGET_NAME      := record_sgtl5000
 
 #MCU   := mk66fx1m0
 MCU   := imxrt1062
-
-ROOT_LOCAL := C:\Users\Walter\Documents\Arduino
-ROOT_TD := C:\Users\Walter\Documents\arduino-1.8.8\hardware
+ROOT0 := C:\Users\zimme\Documents
+ROOT_LOCAL := $(ROOT0)\Arduino
+ROOT_TD := $(ROOT0)\arduino-1.8.10\hardware
 
 LIBS_SHARED_BASE := $(ROOT_LOCAL)\libraries
 LIBS_SHARED      := SdFat-beta-master 

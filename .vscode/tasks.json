@@ -6,7 +6,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Users/Walter/Desktop/Luni/make.exe",
+      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
       "args": [
         "all",
         "-j",
@@ -19,7 +19,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Users/Walter/Desktop/Luni/make.exe",
+      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
       "args": [
         "rebuild",
         "-j",
@@ -32,7 +32,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Users/Walter/Desktop/Luni/make.exe",
+      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
       "args": [
         "clean"
       ]
@@ -43,7 +43,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Users/Walter/Desktop/Luni/make.exe",
+      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
       "args": [
         "upload",
         "-j",
@@ -56,7 +56,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Users/Walter/Desktop/Luni/make.exe",
+      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
       "args": [
         "uploadTy",
         "-j",
@@ -69,7 +69,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Users/Walter/Desktop/Luni/make.exe",
+      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
       "args": [
         "uploadCLI",
         "-j",
