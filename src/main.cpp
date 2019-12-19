@@ -39,8 +39,9 @@
     AudioConnection     patchCord2(acq,1, queue[1],0);
   #endif
 #elif AUDIO_MODE==WMXZ
-  #include "I2S_32slave.h"
-  I2S_32slave acq;
+  #include "i2s_mods.h"
+  #include "I2S_32.h"
+  I2S_32 acq;
     
   #include "m_queue.h"
   mRecordQueue<MQUEU> queue[NCH];
@@ -57,7 +58,6 @@
 AudioControlSGTL5000 audioShield;
 
 // private 'library' included directly into sketch
-#include "i2s_mods.h"
 #include "logger_if.h"
 #include "hibernate.h"
 
@@ -87,11 +87,13 @@ char * headerUpdate(void)
   sptr[2] = r_h2s;
   sptr[3] = r_h2e;
   sptr[4] = NCH;
-  sptr[5] = SEL_LR;
-  sptr[6] = AUDIO_SELECT; 
-  sptr[7] = MicGain; 
-  sptr[8] = AUDIO_MODE;
-  sptr[9] = 0; 
+  sptr[5] = NBYTE;
+  sptr[6] = SEL_LR;
+  sptr[7] = AUDIO_SELECT; 
+  sptr[8] = MicGain; 
+  sptr[9] = AUDIO_MODE;
+  //
+  ptr = (uint32_t*) &sptr[10]; // for future values
   //
   return header;
 }
@@ -102,7 +104,7 @@ time_t getTime() { return Teensy3Clock.get(); }
 
 char * generateDirectory(char *filename)
 {
-  sprintf(filename, "/%s_%04d%02d%02d_%02d", DirPrefix, year(), month(), day(), hour());
+  sprintf(filename, "/%s_%04d%02d%02d/%02d", DirPrefix, year(), month(), day(), hour());
   #if DO_DEBUG>0
     Serial.println(filename);
   #endif
@@ -243,9 +245,7 @@ extern "C" void setup() {
     printDate();
   #endif
 
-	#define AUDIO_NUM (MQUEU+6)
-  static DMAMEM audio_block_t audio_data[AUDIO_NUM];
-  mAudioStream::initialize_memory(audio_data, AUDIO_NUM);
+  mAudioMemory(MQUEU+6);
   
   audioShield.enable();
   audioShield.inputSelect(AUDIO_SELECT);  //AUDIO_INPUT_LINEIN or AUDIO_INPUT_MIC
@@ -253,7 +253,7 @@ extern "C" void setup() {
   I2S_modification(fsamps[FSI],32);
   delay(10);
   SGTL5000_modification(FSI); // must be called after I2S initialization stabilized 
-  //(0: 8kHz, 1: 16 kHz 2:32 kHz, 3:44.1 kHz, 4:48 kHz, 5:96 kHz, 6:192 kHz, 7:360kHz)
+  //(0: 8kHz, 1: 16 kHz 2:32 kHz, 3:44.1 kHz, 4:48 kHz, 5:96 kHz, 6:192 kHz, 7:384kHz)
   
   if(AUDIO_SELECT == AUDIO_INPUT_MIC)
   {

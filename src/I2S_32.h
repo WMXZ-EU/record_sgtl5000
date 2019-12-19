@@ -27,11 +27,11 @@
  // for use with the Recorder_V20 and derivatives
  //
  
-#ifndef I2S_32slave_H
-#define I2S_32slave_H
+#ifndef I2S_32_H
+#define I2S_32_H
 
 #include "core_pins.h"
-
+#include "config.h"
 #include "mAudioStream.h"
 #include "DMAChannel.h"
 
@@ -41,40 +41,16 @@
 
 #if defined(__IMXRT1062__)
  #include "imxrt_hw.h"
- void setAudioFrequency(int fs)
- {
-   	// PLL between 27*24 = 648MHz und 54*24=1296MHz
-	int n1 = 4; //SAI prescaler 4 => (n1*n2) = multiple of 4
-	int n2 = 1 + (24000000 * 27) / (fs * 256 * n1);
-
-	double C = ((double)fs * 256 * n1 * n2) / 24000000;
-	int c0 = C;
-	int c2 = 10000;
-	int c1 = C * c2 - (c0 * c2);
-	set_audioClock(c0, c1, c2, 1);
-
-  	// clear SAI1_CLK register locations
-	CCM_CSCMR1 = (CCM_CSCMR1 & ~(CCM_CSCMR1_SAI1_CLK_SEL_MASK))
-		   | CCM_CSCMR1_SAI1_CLK_SEL(2); // &0x03 // (0,1,2): PLL3PFD0, PLL5, PLL4
-	CCM_CS1CDR = (CCM_CS1CDR & ~(CCM_CS1CDR_SAI1_CLK_PRED_MASK | CCM_CS1CDR_SAI1_CLK_PODF_MASK))
-		   | CCM_CS1CDR_SAI1_CLK_PRED(n1-1) // &0x07
-		   | CCM_CS1CDR_SAI1_CLK_PODF(n2-1); // &0x3f
-	// Select MCLK
-	IOMUXC_GPR_GPR1 = (IOMUXC_GPR_GPR1
-		& ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK))
-		| (IOMUXC_GPR_GPR1_SAI1_MCLK_DIR | IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL(0));
-
- }
 #endif
 
-class I2S_32slave : public mAudioStream
+class I2S_32 : public mAudioStream
 {
 public:
 
-	I2S_32slave(void) : mAudioStream(0, NULL) {begin();}
+	I2S_32(void) : mAudioStream(0, NULL) {begin();}
   void begin(void);
   virtual void update(void);
-  void digitalShift(int16_t val){I2S_32slave::shift=val;}
+  void digitalShift(int16_t val){I2S_32::shift=val;}
   
 protected:  
   static bool update_responsibility;
@@ -91,16 +67,16 @@ private:
 };
 
 // for 32 bit I2S we need doubled buffer
-DMAMEM static uint32_t i2s_rx_buffer_32[2*AUDIO_BLOCK_SAMPLES];
-int16_t I2S_32slave::shift=8; //8 shifts 24 bit data to LSB
+DMAMEM static uint32_t i2s_rx_buffer_32[2*AUDIO_BLOCK_SAMPLES_NCH];
+int16_t I2S_32::shift=8; //8 shifts 24 bit data to LSB
 
-audio_block_t * I2S_32slave:: block_left = NULL;
-audio_block_t * I2S_32slave:: block_right = NULL;
-uint16_t I2S_32slave:: block_offset = 0;
-bool I2S_32slave::update_responsibility = false;
-DMAChannel I2S_32slave::dma(false);
+audio_block_t * I2S_32:: block_left = NULL;
+audio_block_t * I2S_32:: block_right = NULL;
+uint16_t I2S_32:: block_offset = 0;
+bool I2S_32::update_responsibility = false;
+DMAChannel I2S_32::dma(false);
 
-void I2S_32slave::begin(void)
+void I2S_32::begin(void)
 { 
 
   dma.begin(true); // Allocate the DMA channel first
@@ -145,7 +121,7 @@ void I2S_32slave::begin(void)
   dma.attachInterrupt(isr32); 
 }
 
-void I2S_32slave::isr32(void)
+void I2S_32::isr32(void)
 {
   uint32_t daddr, offset;
   const int32_t *src, *end;
@@ -163,35 +139,35 @@ void I2S_32slave::isr32(void)
   if (daddr < (uint32_t)i2s_rx_buffer_32 + sizeof(i2s_rx_buffer_32) / 2) {
     // DMA is receiving to the first half of the buffer
     // need to remove data from the second half
-    src = (int32_t *)&i2s_rx_buffer_32[AUDIO_BLOCK_SAMPLES];
-    end = (int32_t *)&i2s_rx_buffer_32[AUDIO_BLOCK_SAMPLES*2];
-    if (I2S_32slave::update_responsibility) mAudioStream::update_all();
+    src = (int32_t *)&i2s_rx_buffer_32[AUDIO_BLOCK_SAMPLES_NCH];
+    end = (int32_t *)&i2s_rx_buffer_32[AUDIO_BLOCK_SAMPLES_NCH*2];
+    if (I2S_32::update_responsibility) mAudioStream::update_all();
   } else {
     // DMA is receiving to the second half of the buffer
     // need to remove data from the first half
     src = (int32_t *)&i2s_rx_buffer_32[0];
-    end = (int32_t *)&i2s_rx_buffer_32[AUDIO_BLOCK_SAMPLES];
+    end = (int32_t *)&i2s_rx_buffer_32[AUDIO_BLOCK_SAMPLES_NCH];
   }
   
    // extract 16/32 bit from 32 bit I2S buffer but shift to right first
    // there will be two buffers with each having "AUDIO_BLOCK_SAMPLES" samples
-  left = I2S_32slave::block_left;
-  right = I2S_32slave::block_right;
+  left  = I2S_32::block_left;
+  right = I2S_32::block_right;
   if (left != NULL && right != NULL) {
-    offset = I2S_32slave::block_offset;
-    if (offset <= AUDIO_BLOCK_SAMPLES/2) {
-      dest_left = &(left->data[offset]);
+    offset = I2S_32::block_offset;
+    if (offset <= AUDIO_BLOCK_SAMPLES_NCH/2) {
+      dest_left  = &(left->data[offset]);
       dest_right = &(right->data[offset]);
-      I2S_32slave::block_offset = offset + AUDIO_BLOCK_SAMPLES/2;
+      I2S_32::block_offset = offset + AUDIO_BLOCK_SAMPLES_NCH/2;
       do {
-        *dest_left++ = (*src++)>>I2S_32slave::shift; // left side may be 16 or 32 bit
-        *dest_right++ = (*src++)>>I2S_32slave::shift;
+        *dest_left++  = (*src++)>>I2S_32::shift; // left side may be 16 or 32 bit
+        *dest_right++ = (*src++)>>I2S_32::shift;
       } while (src < end);
     }
   }
 }
 
-void I2S_32slave::update(void)
+void I2S_32::update(void)
 {
   audio_block_t *new_left=NULL, *new_right=NULL, *out_left=NULL, *out_right=NULL;
 
@@ -205,7 +181,7 @@ void I2S_32slave::update(void)
     }
   }
   __disable_irq();
-  if (block_offset >= AUDIO_BLOCK_SAMPLES) {
+  if (block_offset >= AUDIO_BLOCK_SAMPLES_NCH) {
     // the DMA filled 2 blocks, so grab them and get the
     // 2 new blocks to the DMA, as quickly as possible
 
@@ -245,7 +221,7 @@ void I2S_32slave::update(void)
 }
 
 #if defined(KINETISK)
-void I2S_32slave::config_i2s(void)
+void I2S_32::config_i2s(void)
 {
   SIM_SCGC6 |= SIM_SCGC6_I2S;
   SIM_SCGC7 |= SIM_SCGC7_DMA;
@@ -255,42 +231,41 @@ void I2S_32slave::config_i2s(void)
   if (I2S0_TCSR & I2S_TCSR_TE) return;
   if (I2S0_RCSR & I2S_RCSR_RE) return;
 
-  // Select input clock 0
-  // Configure to input the bit-clock from pin, bypasses the MCLK divider
-  I2S0_MCR = I2S_MCR_MICS(0);
-  I2S0_MDR = 0;
-  
+  // enable MCLK output
+  I2S0_MCR = I2S_MCR_MICS(MCLK_SRC) | I2S_MCR_MOE;
+  while (I2S0_MCR & I2S_MCR_DUF) ;
+  I2S0_MDR = I2S_MDR_FRACT((MCLK_MULT-1)) | I2S_MDR_DIVIDE((MCLK_DIV-1));
+
   // configure transmitter
   I2S0_TMR = 0;
   I2S0_TCR1 = I2S_TCR1_TFW(1);  // watermark at half fifo size
-  I2S0_TCR2 = I2S_TCR2_SYNC(0) | I2S_TCR2_BCP;
-
+  I2S0_TCR2 = I2S_TCR2_SYNC(0) | I2S_TCR2_BCP | I2S_TCR2_MSEL(1)
+    | I2S_TCR2_BCD | I2S_TCR2_DIV(1);
   I2S0_TCR3 = I2S_TCR3_TCE;
   I2S0_TCR4 = I2S_TCR4_FRSZ(1) | I2S_TCR4_SYWD(31) | I2S_TCR4_MF
-    | I2S_TCR4_FSE | I2S_TCR4_FSP;
-
+    | I2S_TCR4_FSE | I2S_TCR4_FSP | I2S_TCR4_FSD;
   I2S0_TCR5 = I2S_TCR5_WNW(31) | I2S_TCR5_W0W(31) | I2S_TCR5_FBT(31);
 
   // configure receiver (sync'd to transmitter clocks)
   I2S0_RMR = 0;
   I2S0_RCR1 = I2S_RCR1_RFW(1);
-  I2S0_RCR2 = I2S_RCR2_SYNC(1) | I2S_TCR2_BCP;
-
+  I2S0_RCR2 = I2S_RCR2_SYNC(1) | I2S_TCR2_BCP | I2S_RCR2_MSEL(1)
+    | I2S_RCR2_BCD | I2S_RCR2_DIV(1);
   I2S0_RCR3 = I2S_RCR3_RCE;
   I2S0_RCR4 = I2S_RCR4_FRSZ(1) | I2S_RCR4_SYWD(31) | I2S_RCR4_MF
     | I2S_RCR4_FSE | I2S_RCR4_FSP | I2S_RCR4_FSD;
-
   I2S0_RCR5 = I2S_RCR5_WNW(31) | I2S_RCR5_W0W(31) | I2S_RCR5_FBT(31);
-  
+
   // configure pin mux for 3 clock signals
   CORE_PIN23_CONFIG = PORT_PCR_MUX(6); // pin 23, PTC2, I2S0_TX_FS (LRCLK)
   CORE_PIN9_CONFIG  = PORT_PCR_MUX(6); // pin  9, PTC3, I2S0_TX_BCLK
   CORE_PIN11_CONFIG = PORT_PCR_MUX(6); // pin 11, PTC6, I2S0_MCLK
 }
+
 #elif defined (__IMXRT1062__)
 
 #define AUDIO_SAMPLE_RATE_EXACT 96000
-void I2S_32slave::config_i2s(void)
+void I2S_32::config_i2s(void)
 {
 	CCM_CCGR5 |= CCM_CCGR5_SAI1(CCM_CCGR_ON);
 
@@ -300,6 +275,7 @@ void I2S_32slave::config_i2s(void)
 //PLL:
 	int fs = AUDIO_SAMPLE_RATE_EXACT;
   setAudioFrequency(fs);
+
 /*	// PLL between 27*24 = 648MHz und 54*24=1296MHz
 	int n1 = 4; //SAI prescaler 4 => (n1*n2) = multiple of 4
 	int n2 = 1 + (24000000 * 27) / (fs * 256 * n1);
@@ -336,14 +312,14 @@ void I2S_32slave::config_i2s(void)
 		    | (I2S_TCR2_BCD | I2S_TCR2_DIV((1)) | I2S_TCR2_MSEL(1));
 	I2S1_TCR3 = I2S_TCR3_TCE;
 	I2S1_TCR4 = I2S_TCR4_FRSZ((2-1)) | I2S_TCR4_SYWD((32-1)) | I2S_TCR4_MF
-		    | I2S_TCR4_FSD | I2S_TCR4_FSE | I2S_TCR4_FSP;
+		    | I2S_TCR4_FSE | I2S_TCR4_FSP | I2S_TCR4_FSD;
 	I2S1_TCR5 = I2S_TCR5_WNW((32-1)) | I2S_TCR5_W0W((32-1)) | I2S_TCR5_FBT((32-1));
 
 	I2S1_RMR = 0;
 	//I2S1_RCSR = (1<<25); //Reset
 	I2S1_RCR1 = I2S_RCR1_RFW(1);
 	I2S1_RCR2 = I2S_RCR2_SYNC(rsync) | I2S_RCR2_BCP  // sync=0; rx is async;
-		    | (I2S_RCR2_BCD | I2S_RCR2_DIV((1)) | I2S_RCR2_MSEL(1));
+  	    | (I2S_RCR2_BCD | I2S_RCR2_DIV((1)) | I2S_RCR2_MSEL(1));
 	I2S1_RCR3 = I2S_RCR3_RCE;
 	I2S1_RCR4 = I2S_RCR4_FRSZ((2-1)) | I2S_RCR4_SYWD((32-1)) | I2S_RCR4_MF
 		    | I2S_RCR4_FSE | I2S_RCR4_FSP | I2S_RCR4_FSD;

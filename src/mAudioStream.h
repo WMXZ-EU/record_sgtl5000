@@ -75,6 +75,11 @@
 
 #define AUDIO_BLOCK_SAMPLES_NCH (AUDIO_BLOCK_SAMPLES*NCH)
 
+#define mAudioMemory(num) ({ \
+	static DMAMEM audio_block_t audio_data[num]; \
+	mAudioStream::initialize_memory(audio_data, num); \
+})
+
 
 class mAudioStream;
 class mAudioConnection;

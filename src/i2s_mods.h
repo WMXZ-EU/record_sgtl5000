@@ -124,6 +124,31 @@ void I2S_stop(void)
   I2S1_TCSR &= ~(I2S_TCSR_TE | I2S_TCSR_BCE); 
  }
 
+ void setAudioFrequency(int fs)
+ {
+   	// PLL between 27*24 = 648MHz und 54*24=1296MHz
+	int n1 = 4; //SAI prescaler 4 => (n1*n2) = multiple of 4
+	int n2 = 1 + (24000000 * 27) / (fs * 256 * n1);
+
+	double C = ((double)fs * 256 * n1 * n2) / 24000000;
+	int c0 = C;
+	int c2 = 10000;
+	int c1 = C * c2 - (c0 * c2);
+	set_audioClock(c0, c1, c2, 1);
+
+  	// clear SAI1_CLK register locations
+	CCM_CSCMR1 = (CCM_CSCMR1 & ~(CCM_CSCMR1_SAI1_CLK_SEL_MASK))
+		   | CCM_CSCMR1_SAI1_CLK_SEL(2); // &0x03 // (0,1,2): PLL3PFD0, PLL5, PLL4
+	CCM_CS1CDR = (CCM_CS1CDR & ~(CCM_CS1CDR_SAI1_CLK_PRED_MASK | CCM_CS1CDR_SAI1_CLK_PODF_MASK))
+		   | CCM_CS1CDR_SAI1_CLK_PRED(n1-1) // &0x07
+		   | CCM_CS1CDR_SAI1_CLK_PODF(n2-1); // &0x3f
+	// Select MCLK
+	IOMUXC_GPR_GPR1 = (IOMUXC_GPR_GPR1
+		& ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK))
+		| (IOMUXC_GPR_GPR1_SAI1_MCLK_DIR | IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL(0));
+
+ }
+
  void I2S_modification(uint32_t fsamp, uint16_t nbits) 
 {
   I2S_stop();
@@ -223,6 +248,7 @@ void SGTL5000_modification(uint32_t fs_mode)
   if(sgtl_mode<0) sgtl_mode = 0;
   
   chipWrite(CHIP_CLK_CTRL, (sgtl_mode<<2));  // 256*Fs| sgtl_mode = 0:32 kHz; 1:44.1 kHz; 2:48 kHz; 3:96 kHz
+  //chipWrite(CHIP_I2S_CTRL, 1<<7 | 3<<5 );  // master and 16 bit
 }
 
 void SGTL5000_disable(void)

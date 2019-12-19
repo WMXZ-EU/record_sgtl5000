@@ -19,6 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef CONFIG_H
+#define CONFIG_H
 
 uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 384000};
 /*
@@ -30,15 +32,16 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 384000};
 #define DO_DEBUG 1
 #define FSI 5// desired sampling frequency index
 #define NCH 1
-#define SEL_LR 1  // record only a single channel (0 left, 1 right)
+#define NBYTE 2
 
 #define PJRC 0
 #define WMXZ 1
 #define AUDIO_MODE WMXZ
 
-#define AUDIO_SELECT AUDIO_INPUT_LINEIN 
-//#define AUDIO_SELECT AUDIO_INPUT_MIC
+//#define AUDIO_SELECT AUDIO_INPUT_LINEIN 
+#define AUDIO_SELECT AUDIO_INPUT_MIC
 #define MicGain 0 // (0 - 64) dB
+#define SEL_LR 0  // record only a single channel (0 left, 1 right)
 
 #if defined(__MK20DX256__)
   #define MQUEU (100/NCH) // number of buffers in aquisition queue
@@ -68,3 +71,5 @@ uint16_t r_h2e = 22;   // end of record period 2 (if smaller than r_h2s then run
 
 #define DirPrefix "DIR"
 #define FilePrefix "WMXZ"
+
+#endif
