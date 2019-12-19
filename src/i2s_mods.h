@@ -1,4 +1,4 @@
-/* SGTL5000 Recorder for Teensy 3.X
+/* SGTL5000 Recorder for Teensy 
  * Copyright (c) 2018, Walter Zimmer
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -123,6 +123,7 @@ void I2S_stop(void)
   I2S1_RCSR &= ~(I2S_RCSR_RE | I2S_RCSR_BCE); 
   I2S1_TCSR &= ~(I2S_TCSR_TE | I2S_TCSR_BCE); 
  }
+
  void I2S_modification(uint32_t fsamp, uint16_t nbits) 
 {
   I2S_stop();
@@ -130,7 +131,8 @@ void I2S_stop(void)
 	CCM_CCGR5 |= CCM_CCGR5_SAI1(CCM_CCGR_ON);
 //PLL:
 	int fs = fsamp;
-	// PLL between 27*24 = 648MHz und 54*24=1296MHz
+  setAudioFrequency(fs);
+/*	// PLL between 27*24 = 648MHz und 54*24=1296MHz
 	int n1 = 4; //SAI prescaler 4 => (n1*n2) = multiple of 4
 	int n2 = 1 + (24000000 * 27) / (fs * 256 * n1);
 
@@ -149,7 +151,7 @@ void I2S_stop(void)
 
 	IOMUXC_GPR_GPR1 = (IOMUXC_GPR_GPR1 & ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK))
 			| (IOMUXC_GPR_GPR1_SAI1_MCLK_DIR | IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL(0));	//Select MCLK
-
+*/
   // restart I2S 
   I2S_start();
 }

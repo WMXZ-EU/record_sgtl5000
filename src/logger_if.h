@@ -44,14 +44,16 @@ class c_uSD
     c_uSD(void): state(-1) { }
     void init(void);
     void exit(void);
+    void close(void);
 
     void chDir(void);
     int16_t write(int16_t * data, int32_t ndat, int mustClose);
 
     uint32_t nCount=0;
+    int16_t getStatus() {return state;}
     
   private:
-    int16_t state; // 0 initialized; 1 file open; 2 data written; 3 to be closed
+    int16_t state; // 0 initialized; 1 file open; 2 data written; 3 to be closed; -1 error
 
     c_mFS mFS;
 
@@ -91,6 +93,10 @@ void c_uSD::exit(void)
   state=-1;
 }
 
+void c_uSD::close(void)
+{ mFS.close();
+  state=0;
+}
 
 void c_uSD::chDir(void)
 { char * dirName=makeDirname();

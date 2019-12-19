@@ -27,6 +27,7 @@
  // 06-jun-17: changed some compiler directives
  //            added high speed mode of K66
  // using hibernate disconnects from USB so serial monitor will break (pre TD 1.42)
+ // added T4
  
 #include "core_pins.h"
 
@@ -151,65 +152,9 @@ void setWakeupCallandSleep(uint32_t nsec)
 #define SNVS_LPSR_PGD_MASK              (0x8U)
 #define SNVS_LPCR_LPTA_EN_MASK          (0x2U)
 
-#if 0
-// see also https://github.com/manitou48/teensy4/blob/master/rtc.ino
-#define SNVS_DEFAULT_PGD_VALUE (0x41736166U)
-#define SNVS_LPSRTCMR      (IMXRT_SNVS.offset050)
-#define SNVS_LPSRTCLR      (IMXRT_SNVS.offset054)
-//----------------------------------------------------
-#define SNVS_LPTAR        (IMXRT_SNVS.offset058)
-
-#define SNVS_LPCR_SRTC_ENV_MASK         (0x1U)
-#define SNVS_LPCR_SRTC_ENV(x)           (((uint32_t)(((uint32_t)(x)) << 0U)) & SNVS_LPCR_SRTC_ENV_MASK)
-
-#define SNVS_LPCR_LPTA_EN(x)            (((uint32_t)(((uint32_t)(x)) << 1U)) & SNVS_LPCR_LPTA_EN_MASK)
-
-#define SNVS_LPCR_MC_ENV_MASK           (0x4U)
-#define SNVS_LPCR_MC_ENV(x)             (((uint32_t)(((uint32_t)(x)) << 2U)) & SNVS_LPCR_MC_ENV_MASK)
-
-#define SNVS_LPCR_LPWUI_EN_MASK         (0x8U)
-#define SNVS_LPCR_LPWUI_EN(x)           (((uint32_t)(((uint32_t)(x)) << 3U)) & SNVS_LPCR_LPWUI_EN_MASK)
-
-#define SNVS_LPCR_SRTC_INV_EN_MASK      (0x10U)
-#define SNVS_LPCR_SRTC_INV_EN(x)        (((uint32_t)(((uint32_t)(x)) << 4U)) & SNVS_LPCR_SRTC_INV_EN_MASK)
-
-#define SNVS_LPCR_DP_EN_MASK            (0x20U)
-#define SNVS_LPCR_DP_EN(x)              (((uint32_t)(((uint32_t)(x)) << 5U)) & SNVS_LPCR_DP_EN_MASK)
-
-#define SNVS_LPCR_TOP_MASK              (0x40U)
-#define SNVS_LPCR_TOP(x)                (((uint32_t)(((uint32_t)(x)) << 6U)) & SNVS_LPCR_TOP_MASK)
-
-#define SNVS_LPCR_PWR_GLITCH_EN_MASK    (0x80U)
-#define SNVS_LPCR_PWR_GLITCH_EN(x)      (((uint32_t)(((uint32_t)(x)) << 7U)) & SNVS_LPCR_PWR_GLITCH_EN_MASK)
-
-#define SNVS_LPCR_LPCALB_EN_MASK        (0x100U)
-#define SNVS_LPCR_LPCALB_EN(x)          (((uint32_t)(((uint32_t)(x)) << 8U)) & SNVS_LPCR_LPCALB_EN_MASK)
-
-#define SNVS_LPCR_LPCALB_VAL_MASK       (0x7C00U)
-#define SNVS_LPCR_LPCALB_VAL(x)         (((uint32_t)(((uint32_t)(x)) << 10U)) & SNVS_LPCR_LPCALB_VAL_MASK)
-
-#define SNVS_LPCR_BTN_PRESS_TIME_MASK   (0x30000U)
-#define SNVS_LPCR_BTN_PRESS_TIME(x)     (((uint32_t)(((uint32_t)(x)) << 16U)) & SNVS_LPCR_BTN_PRESS_TIME_MASK)
-
-#define SNVS_LPCR_DEBOUNCE_MASK         (0xC0000U)
-#define SNVS_LPCR_DEBOUNCE(x)           (((uint32_t)(((uint32_t)(x)) << 18U)) & SNVS_LPCR_DEBOUNCE_MASK)
-
-#define SNVS_LPCR_ON_TIME_MASK          (0x300000U)
-#define SNVS_LPCR_ON_TIME(x)            (((uint32_t)(((uint32_t)(x)) << 20U)) & SNVS_LPCR_ON_TIME_MASK)
-
-#define SNVS_LPCR_PK_EN_MASK            (0x400000U)
-#define SNVS_LPCR_PK_EN(x)              (((uint32_t)(((uint32_t)(x)) << 22U)) & SNVS_LPCR_PK_EN_MASK)
-
-#define SNVS_LPCR_PK_OVERRIDE_MASK      (0x800000U)
-#define SNVS_LPCR_PK_OVERRIDE(x)        (((uint32_t)(((uint32_t)(x)) << 23U)) & SNVS_LPCR_PK_OVERRIDE_MASK)
-
-#define SNVS_LPCR_GPR_Z_DIS_MASK        (0x1000000U)
-#define SNVS_LPCR_GPR_Z_DIS(x)          (((uint32_t)(((uint32_t)(x)) << 24U)) & SNVS_LPCR_GPR_Z_DIS_MASK)
-
-#define SNVS_LPSR_LPTA                  (0x1U)
-#endif
 void rtc_init() 
-{ CCM_CCGR2 |= CCM_CCGR2_IOMUXC_SNVS(CCM_CCGR_ON);
+{ 
+  CCM_CCGR2 |= CCM_CCGR2_IOMUXC_SNVS(CCM_CCGR_ON);
   SNVS_LPGPR = SNVS_DEFAULT_PGD_VALUE;
   SNVS_LPSR = SNVS_LPSR_PGD_MASK;
   // ? calibration
@@ -223,7 +168,6 @@ void rtc_init()
   while (!(SNVS_LPCR & 1));
 }
 
-extern void *__rtc_localtime; 
 void rtc_set_time(uint32_t secs) 
 { //uint32_t secs = 1547051415;
   SNVS_LPCR &= ~1;   // stop RTC
@@ -256,8 +200,8 @@ void rtc_stopAlarm()
 void rtc_isr(void)
 { 
   SNVS_LPSR |= 1;
-  Serial.println("Alarm");
-  asm("DSB");
+//  Serial.println("Alarm");
+  asm volatile ("DSB");
 }
 
 void rtc_initAlarm(uint32_t prio=13)
@@ -290,16 +234,21 @@ uint32_t rtc_getAlarm()
 
 void doShutdown(void) 
 { 
-  SNVS_LPCR |=(1<<3) ; // enable wake-up
-//  SNVS_LPCR |=(1<<6) ; // turn off power
+//  SNVS_LPCR |=(1<<3) ; // enable wake-up
+  SNVS_LPCR |=(1<<6) ; // turn off power
+  while(1) continue;
 }
 
 void setWakeupCallandSleep(uint32_t nsec)
 {
-  rtc_init();
-  rtc_set_time(now());   //LPSRTC will start at 0 otherwise
-  rtc_initAlarm(13);
-  rtc_setAlarm(nsec);
+  uint32_t to=now();
+  if(!(SNVS_LPCR & 1))
+  {
+    rtc_init();
+    rtc_set_time(to);   //LPSRTC will start at 0 otherwise
+  }
+  rtc_initAlarm(4);
+  rtc_setAlarm(to+nsec);
   doShutdown();
 }
 #endif

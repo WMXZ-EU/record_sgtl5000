@@ -1,4 +1,4 @@
-/* SGTL5000 Recorder for Teensy 3.X
+/* SGTL5000 Recorder for Teensy 
  * Copyright (c) 2018, Walter Zimmer
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -31,12 +31,13 @@
  *  uint32_t write(uint8_t *buffer, uint32_t nbuf, int mustClose);
  *  uint32_t read(uint8_t *buffer, uint32_t nbuf);
  */
- #define SDo 1  // Stock SD library
- #define SdFS 2 // Greimans SD library
- #define uSDFS 3 // CHaN's SD library (does no work yet)
+ #define SDo 1    // Stock SD library
+ #define SdFAT 2  // Greimans SDFat library
+ #define SdFS 3   // Greimans SDFs library
+ #define uSDFS 4  // CHaN's SD library (does no work yet)
 // note SdFS needs CHECK_PROGRAMMING set to 1 in SdSpiCard.cpp
 
-#define USE_FS SdFS
+#define USE_FS SdFAT
 // NOTE:
 // To compile needs https://github.com/greiman/SdFat-beta and .src the file SdFat.h changed to SdFat-beta.h
 // in SdFatConfig.h SDFAT_FILE_TYPE changed from 1 to 3 to allow exFAT file systems
@@ -46,7 +47,7 @@
 const uint64_t PRE_ALLOCATE_SIZE = 8ULL << 20;
 
 /************************** File System Interface****************/
-#if USE_FS == SdFS
+#if USE_FS == SdFS || USE_FS== SdFAT
 #include "SdFat-beta.h"
 #include "TimeLib.h"
 
@@ -87,7 +88,7 @@ class c_mFS
   
   public:
     void init(void)
-    { Serial.println("Using SdFS");
+    { Serial.println("Using SdFat");
       #if defined(__MK20DX256__)
           // Initialize the SD card
         SPI.setMOSI(7);
