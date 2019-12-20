@@ -30,7 +30,7 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 384000};
  */
 
 #define DO_DEBUG 1
-#define FSI 5// desired sampling frequency index
+#define FSI 3// desired sampling frequency index
 #define NCH 1
 #define NBYTE 2
 

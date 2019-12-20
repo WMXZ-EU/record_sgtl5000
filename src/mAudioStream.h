@@ -76,10 +76,11 @@
 #define AUDIO_BLOCK_SAMPLES_NCH (AUDIO_BLOCK_SAMPLES*NCH)
 
 #define mAudioMemory(num) ({ \
-	static DMAMEM audio_block_t audio_data[num]; \
+	static audio_block_t audio_data[num]; \
 	mAudioStream::initialize_memory(audio_data, num); \
 })
-
+#define mAudioMemoryUsageMax() (mAudioStream::memory_used_max)
+#define mAudioMemoryUsageMaxReset() (mAudioStream::memory_used_max = mAudioStream::memory_used)
 
 class mAudioStream;
 class mAudioConnection;

@@ -347,8 +347,6 @@ void loop() {
       {
         Serial.println("Closing A");
         Serial.println(state);
-        Serial.println((uint32_t)(outptr),HEX);
-        Serial.println((uint32_t)(diskBuffer),HEX);
         Serial.println((uint32_t)(outptr-diskBuffer));
       }
       if(outptr>diskBuffer)
@@ -421,9 +419,10 @@ void loop() {
     if(millis()>t0+1000)
     {  Serial.printf("loop: %5d; %4d %4d %4d %6d %4d",
              loopCount,
-             mAudioStream::memory_used_max, uSD.nCount, queue[0].dropCount, tMax, rtc_get() % t_on);
+             mAudioMemoryUsageMax(), uSD.nCount, queue[0].dropCount, tMax, rtc_get() % t_on);
        Serial.println();
-       mAudioStream::memory_used_max=mAudioStream::memory_used;
+       //
+       mAudioMemoryUsageMaxReset();
        //
        uSD.nCount=0;
        loopCount=0;

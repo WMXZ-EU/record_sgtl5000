@@ -243,12 +243,13 @@ unsigned int chipModify(unsigned int reg, unsigned int val, unsigned int iMask)
 }
 
 void SGTL5000_modification(uint32_t fs_mode)
-{ int sgtl_mode=fs_mode-2;
-  if(sgtl_mode>3) sgtl_mode = 3;
+{ int sgtl_mode=(fs_mode-2); 
+  if(sgtl_mode>3) sgtl_mode = 3; 
   if(sgtl_mode<0) sgtl_mode = 0;
   
+//  write(CHIP_CLK_CTRL, 0x0004);  // 44.1 kHz, 256*Fs
+//	write(CHIP_I2S_CTRL, 0x0130); // SCLK=32*Fs, 16bit, I2S format
   chipWrite(CHIP_CLK_CTRL, (sgtl_mode<<2));  // 256*Fs| sgtl_mode = 0:32 kHz; 1:44.1 kHz; 2:48 kHz; 3:96 kHz
-  //chipWrite(CHIP_I2S_CTRL, 1<<7 | 3<<5 );  // master and 16 bit
 }
 
 void SGTL5000_disable(void)

@@ -67,7 +67,7 @@ private:
 };
 
 // for 32 bit I2S we need doubled buffer
-DMAMEM static uint32_t i2s_rx_buffer_32[2*AUDIO_BLOCK_SAMPLES_NCH];
+static uint32_t i2s_rx_buffer_32[2*AUDIO_BLOCK_SAMPLES_NCH];
 int16_t I2S_32::shift=8; //8 shifts 24 bit data to LSB
 
 audio_block_t * I2S_32:: block_left = NULL;
@@ -111,8 +111,8 @@ void I2S_32::begin(void)
 
 #elif defined (__IMXRT1062__)
 	dma.triggerAtHardwareEvent(DMAMUX_SOURCE_SAI1_RX);
-  I2S1_RCSR |= I2S_RCSR_RE | I2S_RCSR_BCE | I2S_RCSR_FRDE | I2S_RCSR_FR;
-  I2S1_TCSR |= I2S_TCSR_TE | I2S_TCSR_BCE; // TX clock enable, because sync'd to TX
+  I2S1_RCSR = I2S_RCSR_RE | I2S_RCSR_BCE | I2S_RCSR_FRDE | I2S_RCSR_FR;
+//  I2S1_TCSR |= I2S_TCSR_TE | I2S_TCSR_BCE; // TX clock enable, because sync'd to TX
 
 #endif
   update_responsibility = update_setup();
@@ -150,7 +150,7 @@ void I2S_32::isr32(void)
   }
   
    // extract 16/32 bit from 32 bit I2S buffer but shift to right first
-   // there will be two buffers with each having "AUDIO_BLOCK_SAMPLES" samples
+   // there will be two buffers with each having "AUDIO_BLOCK_SAMPLES_NCH" samples
   left  = I2S_32::block_left;
   right = I2S_32::block_right;
   if (left != NULL && right != NULL) {
@@ -264,7 +264,7 @@ void I2S_32::config_i2s(void)
 
 #elif defined (__IMXRT1062__)
 
-#define AUDIO_SAMPLE_RATE_EXACT 96000
+#define AUDIO_SAMPLE_RATE_EXACT 44100
 void I2S_32::config_i2s(void)
 {
 	CCM_CCGR5 |= CCM_CCGR5_SAI1(CCM_CCGR_ON);
