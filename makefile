@@ -15,11 +15,12 @@ export SHELL
 
 TARGET_NAME      := record_sgtl5000
 
-#MCU   := mk66fx1m0
-MCU   := imxrt1062
-ROOT0 := C:\Users\zimme\Documents
-ROOT_LOCAL := $(ROOT0)\Arduino
-ROOT_TD := $(ROOT0)\arduino-1.8.10\hardware
+#MCU  			:= mk66fx1m0
+MCU   			:= imxrt1062
+
+ROOT0 			:= C:\Users\zimme\Documents
+ROOT_LOCAL 		:= $(ROOT0)\Arduino
+ROOT_TD 		:= $(ROOT0)\arduino-1.8.10\hardware
 
 LIBS_SHARED_BASE := $(ROOT_LOCAL)\libraries
 LIBS_SHARED      := SdFat-beta 
@@ -28,21 +29,21 @@ LIBS_LOCAL_BASE  := $(ROOT_TD)\teensy\avr\libraries
 LIBS_LOCAL       := SPI Time Audio Wire SD SerialFlash
 
 ifeq ($(MCU),mk66fx1m0)
-BOARD_ID    := TEENSY36
-Family := teensy3
-FLAGS_CPU   := -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
-LIBS        := -larm_cortexM4lf_math -lm
-DEFINES     := -D__MK66FX1M0__ 
-DEFINES     += -DF_CPU=96000000
+	BOARD_ID    := TEENSY36
+	Family 		:= teensy3
+	FLAGS_CPU   := -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
+	LIBS        := -larm_cortexM4lf_math -lm
+	DEFINES     := -D__MK66FX1M0__ 
+	DEFINES     += -DF_CPU=96000000
 endif
 
 ifeq ($(MCU),imxrt1062)
-BOARD_ID    := TEENSY40
-Family := teensy4
-FLAGS_CPU   := -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
-LIBS        := -larm_cortexM4lf_math -lm
-DEFINES     := -D__IMXRT1062__ 
-DEFINES     += -DF_CPU=396000000
+	BOARD_ID    := TEENSY40
+	Family		:= teensy4
+	FLAGS_CPU   := -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
+	LIBS        := -larm_cortexM4lf_math -lm
+	DEFINES     := -D__IMXRT1062__ 
+	DEFINES     += -DF_CPU=396000000
 endif
 
 $(info $(DEFINES))
@@ -114,8 +115,8 @@ UPL_CLICMD  := $(UPL_CLICMD_B)\teensy_loader_cli -mmcu=$(MCU) -v $(TARGET_HEX)
 rwildcard =$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 #User Sources -----------------------------------------------------------------
-USR_C_FILES    := $(call rwildcard,$(USR_SRC)/,*.c)
 USR_CPP_FILES  := $(call rwildcard,$(USR_SRC)/,*.cpp)
+USR_C_FILES    := $(call rwildcard,$(USR_SRC)/,*.c)
 USR_S_FILES    := $(call rwildcard,$(USR_SRC)/,*.S)
 USR_OBJ        := $(USR_S_FILES:$(USR_SRC)/%.S=$(USR_BIN)/%.o) $(USR_C_FILES:$(USR_SRC)/%.c=$(USR_BIN)/%.o) $(USR_CPP_FILES:$(USR_SRC)/%.cpp=$(USR_BIN)/%.o) 
 
@@ -153,8 +154,6 @@ INCLUDE        += $(foreach d, $(LIB_DIRS_LOCAL), -I$d)
 # Generate directories --------------------------------------------------------
 DIRECTORIES :=  $(sort $(dir $(CORE_OBJ) $(USR_OBJ) $(LIB_OBJ)))
 generateDirs := $(foreach d, $(DIRECTORIES), $(shell if not exist "$d" mkdir "$d"))
-
-
 
 #$(info dirs: $(DIRECTORIES))
 
