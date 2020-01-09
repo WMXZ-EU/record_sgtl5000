@@ -34,9 +34,11 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 384000};
 #define NCH 1
 #define NBYTE 2
 
-#define PJRC 0
-#define WMXZ 1
+#define PJRC 0  // use core audio SW
+#define WMXZ 1  // use WMXZ audio SW
 #define AUDIO_MODE WMXZ
+
+#define USE_SDIO 0
 
 //#define AUDIO_SELECT AUDIO_INPUT_LINEIN 
 #define AUDIO_SELECT AUDIO_INPUT_MIC

@@ -51,6 +51,40 @@ const uint64_t PRE_ALLOCATE_SIZE = 8ULL << 20;
 #include "SdFat-beta.h"
 #include "TimeLib.h"
 
+#define USE_SDIO 0
+  #if defined(__MK20DX256__)
+    #define SD_CS  10
+    #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
+    #define SD_MOSI  7
+    #define SD_MISO 12
+    #define SD_SCK  14
+    
+  #elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
+    #if USE_SDIO==1
+    // Use FIFO SDIO or DMA_SDIO
+    #define SD_CONFIG SdioConfig(FIFO_SDIO)
+  //  #define SD_CONFIG SdioConfig(DMA_SDIO)
+    #else
+      #define SD_CS  10
+      #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
+      #define SD_MOSI  7
+      #define SD_MISO 12
+      #define SD_SCK  14
+    #endif
+  #elif defined(__IMXRT1062__)
+    #if USE_SDIO==1
+    // Use FIFO SDIO or DMA_SDIO
+    #define SD_CONFIG SdioConfig(FIFO_SDIO)
+  //  #define SD_CONFIG SdioConfig(DMA_SDIO)
+    #else
+      #define SD_CS  10
+      #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
+      #define SD_MOSI 11
+      #define SD_MISO 12
+      #define SD_SCK  13
+    #endif
+  #endif
+
 //------------------------------------------------------------------------------
 // Call back for file timestamps.  Only called for file create and sync().
 void dateTime(uint16_t* date, uint16_t* time, uint8_t* ms10) 
@@ -65,20 +99,6 @@ void dateTime(uint16_t* date, uint16_t* time, uint8_t* ms10)
   *ms10 = second() & 1 ? 100 : 0;
 }
 
-#if defined(__MK20DX256__)
-  #define SD_CS 10
-  #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
-  
-#elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
-  // Use FIFO SDIO or DMA_SDIO
-  #define SD_CONFIG SdioConfig(FIFO_SDIO)
-  //#define SD_CONFIG SdioConfig(DMA_SDIO)
-#elif defined(__IMXRT1062__)
-  #define SD_CS 10
-  #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
-  //#define SD_CONFIG SdioConfig(FIFO_SDIO)
-#endif
-
 
 class c_mFS
 {
@@ -89,16 +109,12 @@ class c_mFS
   public:
     void init(void)
     { Serial.println("Using SdFat");
-      #if defined(__MK20DX256__)
-          // Initialize the SD card
-        SPI.setMOSI(7);
-        SPI.setSCK(14);
-      #endif  
-      #if defined(__IMXRT1062__)
-          // Initialize the SD card
-        SPI.setMOSI(7);
-        SPI.setSCK(14);
-      #endif  
+
+      #if USE_SDI0==0
+        SPI.setMOSI(SD_MOSI);
+        SPI.setMISO(SD_MISO);
+        SPI.setSCK(SD_SCK);
+      #endif
       if (!sd.begin(SD_CONFIG)) sd.errorHalt("sd.begin failed");
     
       // Set Time callback
@@ -106,7 +122,6 @@ class c_mFS
     }
 
     void mkDir(char * dirname)  { if(!sd.exists(dirname)) sd.mkdir(dirname);  }
-    
     void chDir(char * dirname)  { sd.chdir(dirname);   }
     
     void exit(void)

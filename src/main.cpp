@@ -185,7 +185,7 @@ int32_t record_or_sleep(void)
   {
     if((tsy >= a_on) && (a_off>0))   // check end of aquisition
       ret = (a_on + a_off - tsy);
-    else if (tsx < tso)             // check end of file
+    else if (tsx < tso)              // check end of file
       ret = -1;
   }
   if(ret) 
