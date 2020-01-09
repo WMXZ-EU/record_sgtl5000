@@ -22,7 +22,7 @@ ROOT_LOCAL := $(ROOT0)\Arduino
 ROOT_TD := $(ROOT0)\arduino-1.8.10\hardware
 
 LIBS_SHARED_BASE := $(ROOT_LOCAL)\libraries
-LIBS_SHARED      := SdFat-beta-master 
+LIBS_SHARED      := SdFat-beta 
 
 LIBS_LOCAL_BASE  := $(ROOT_TD)\teensy\avr\libraries
 LIBS_LOCAL       := SPI Time Audio Wire SD SerialFlash
