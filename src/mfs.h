@@ -61,9 +61,9 @@ const uint64_t PRE_ALLOCATE_SIZE = 8ULL << 20;
     
   #elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
     #if USE_SDIO==1
-    // Use FIFO SDIO or DMA_SDIO
-    #define SD_CONFIG SdioConfig(FIFO_SDIO)
-  //  #define SD_CONFIG SdioConfig(DMA_SDIO)
+      // Use FIFO SDIO or DMA_SDIO
+      #define SD_CONFIG SdioConfig(FIFO_SDIO)
+  //    #define SD_CONFIG SdioConfig(DMA_SDIO)
     #else
       #define SD_CS  10
       #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
@@ -73,9 +73,9 @@ const uint64_t PRE_ALLOCATE_SIZE = 8ULL << 20;
     #endif
   #elif defined(__IMXRT1062__)
     #if USE_SDIO==1
-    // Use FIFO SDIO or DMA_SDIO
-    #define SD_CONFIG SdioConfig(FIFO_SDIO)
-  //  #define SD_CONFIG SdioConfig(DMA_SDIO)
+      // Use FIFO SDIO or DMA_SDIO
+      #define SD_CONFIG SdioConfig(FIFO_SDIO)
+  //    #define SD_CONFIG SdioConfig(DMA_SDIO)
     #else
       #define SD_CS  10
       #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
@@ -98,7 +98,6 @@ void dateTime(uint16_t* date, uint16_t* time, uint8_t* ms10)
   // Return low time bits in units of 10 ms.
   *ms10 = second() & 1 ? 100 : 0;
 }
-
 
 class c_mFS
 {

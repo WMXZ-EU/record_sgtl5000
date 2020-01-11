@@ -264,7 +264,7 @@ void I2S_32::config_i2s(void)
 
 #elif defined (__IMXRT1062__)
 
-#define AUDIO_SAMPLE_RATE_EXACT 44100
+#define AUDIO_SAMPLE_RATE_EXACT 44100 // used for initialization
 void I2S_32::config_i2s(void)
 {
 	CCM_CCGR5 |= CCM_CCGR5_SAI1(CCM_CCGR_ON);
