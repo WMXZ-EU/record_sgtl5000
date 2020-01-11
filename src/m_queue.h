@@ -1,3 +1,7 @@
+/*
+ * SGTL5000 Recorder for Teensy 
+ * WMXZ 2019
+ */
 /* Audio Library for Teensy 3.X
  * Copyright (c) 2014, Paul Stoffregen, paul@pjrc.com
  *
@@ -32,14 +36,14 @@
 #ifndef M_QUEUE_H
 #define M_QUEUE_H
 
-#include "AudioStream.h"
+#include "mAudioStream.h"
 
 //#define MQ 53
 template <int MQ>
-class mRecordQueue : public AudioStream
+class mRecordQueue : public mAudioStream
 {
 public:
-	mRecordQueue(void) : AudioStream(1, inputQueueArray),
+	mRecordQueue(void) : mAudioStream(1, inputQueueArray),
 		userblock(NULL), head(0), tail(0), enabled(0) { }
    
 	void begin(void) {  clear();	 enabled = 1;	}

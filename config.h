@@ -1,4 +1,4 @@
-/* SGTL5000 Recorder for Teensy 3.X
+/* SGTL5000 Recorder for Teensy 
  * Copyright (c) 2018, Walter Zimmer
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,8 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef CONFIG_H
+#define CONFIG_H
 
-uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 240000, 360000};
+uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 384000};
 /*
  * NOTE: changing frequency impacts the macros 
  *      AudioProcessorUsage and AudioProcessorUsageMax
@@ -28,12 +30,20 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 24
  */
 
 #define DO_DEBUG 1
-#define FSI 5// desired sampling frequency index
+#define FSI 3// desired sampling frequency index
 #define NCH 1
-#define SEL_LR 1  // record only a single channel (0 left, 1 right)
+#define NBYTE 2
 
-#define AUDIO_SELECT AUDIO_INPUT_LINEIN 
-//#define AUDIO_SELECT AUDIO_INPUT_MIC
+#define PJRC 0  // use core audio SW
+#define WMXZ 1  // use WMXZ audio SW
+#define AUDIO_MODE WMXZ
+
+#define USE_SDIO 0
+
+//#define AUDIO_SELECT AUDIO_INPUT_LINEIN 
+#define AUDIO_SELECT AUDIO_INPUT_MIC
+#define MicGain 0 // (0 - 64) dB
+#define SEL_LR 0  // record only a single channel (0 left, 1 right)
 
 #if defined(__MK20DX256__)
   #define MQUEU (100/NCH) // number of buffers in aquisition queue
@@ -53,8 +63,15 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 24
 
 // times for acquisition and filing
 uint32_t a_on = 60; // acquisition on time
-uint32_t a_off = 0; // acquisition off time
+uint32_t a_off =60; // acquisition off time
 uint32_t t_on = 20; // file on time
+
+uint16_t r_h1s =  8;   // start of record period 1
+uint16_t r_h1e = 12;   // end of record period 1 (if smaller than r_h1s then runs over midnight)
+uint16_t r_h2s = 12;   // start of record period 2
+uint16_t r_h2e = 22;   // end of record period 2 (if smaller than r_h2s then runs over midnight)
 
 #define DirPrefix "DIR"
 #define FilePrefix "WMXZ"
+
+#endif

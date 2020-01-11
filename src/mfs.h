@@ -1,4 +1,4 @@
-/* SGTL5000 Recorder for Teensy 3.X
+/* SGTL5000 Recorder for Teensy 
  * Copyright (c) 2018, Walter Zimmer
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -31,12 +31,13 @@
  *  uint32_t write(uint8_t *buffer, uint32_t nbuf, int mustClose);
  *  uint32_t read(uint8_t *buffer, uint32_t nbuf);
  */
- #define SDo 1  // Stock SD library
- #define SdFS 2 // Greimans SD library
- #define uSDFS 3 // CHaN's SD library (does no work yet)
+ #define SDo 1    // Stock SD library
+ #define SdFAT 2  // Greimans SDFat library
+ #define SdFS 3   // Greimans SDFs library
+ #define uSDFS 4  // CHaN's SD library (does no work yet)
 // note SdFS needs CHECK_PROGRAMMING set to 1 in SdSpiCard.cpp
 
-#define USE_FS SdFS
+#define USE_FS SdFAT
 // NOTE:
 // To compile needs https://github.com/greiman/SdFat-beta and .src the file SdFat.h changed to SdFat-beta.h
 // in SdFatConfig.h SDFAT_FILE_TYPE changed from 1 to 3 to allow exFAT file systems
@@ -46,9 +47,43 @@
 const uint64_t PRE_ALLOCATE_SIZE = 8ULL << 20;
 
 /************************** File System Interface****************/
-#if USE_FS == SdFS
+#if USE_FS == SdFS || USE_FS== SdFAT
 #include "SdFat-beta.h"
 #include "TimeLib.h"
+
+#define USE_SDIO 0
+  #if defined(__MK20DX256__)
+    #define SD_CS  10
+    #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
+    #define SD_MOSI  7
+    #define SD_MISO 12
+    #define SD_SCK  14
+    
+  #elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
+    #if USE_SDIO==1
+    // Use FIFO SDIO or DMA_SDIO
+    #define SD_CONFIG SdioConfig(FIFO_SDIO)
+  //  #define SD_CONFIG SdioConfig(DMA_SDIO)
+    #else
+      #define SD_CS  10
+      #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
+      #define SD_MOSI  7
+      #define SD_MISO 12
+      #define SD_SCK  14
+    #endif
+  #elif defined(__IMXRT1062__)
+    #if USE_SDIO==1
+    // Use FIFO SDIO or DMA_SDIO
+    #define SD_CONFIG SdioConfig(FIFO_SDIO)
+  //  #define SD_CONFIG SdioConfig(DMA_SDIO)
+    #else
+      #define SD_CS  10
+      #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
+      #define SD_MOSI 11
+      #define SD_MISO 12
+      #define SD_SCK  13
+    #endif
+  #endif
 
 //------------------------------------------------------------------------------
 // Call back for file timestamps.  Only called for file create and sync().
@@ -64,20 +99,6 @@ void dateTime(uint16_t* date, uint16_t* time, uint8_t* ms10)
   *ms10 = second() & 1 ? 100 : 0;
 }
 
-#if defined(__MK20DX256__)
-  #define SD_CS 10
-  #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
-  
-#elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
-  // Use FIFO SDIO or DMA_SDIO
-  #define SD_CONFIG SdioConfig(FIFO_SDIO)
-  //#define SD_CONFIG SdioConfig(DMA_SDIO)
-#elif defined(__IMXRT1062__)
-  #define SD_CS 10
-  #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
-  //#define SD_CONFIG SdioConfig(FIFO_SDIO)
-#endif
-
 
 class c_mFS
 {
@@ -87,17 +108,13 @@ class c_mFS
   
   public:
     void init(void)
-    { Serial.println("Using SdFS");
-      #if defined(__MK20DX256__)
-          // Initialize the SD card
-        SPI.setMOSI(7);
-        SPI.setSCK(14);
-      #endif  
-      #if defined(__IMXRT1062__)
-          // Initialize the SD card
-        SPI.setMOSI(7);
-        SPI.setSCK(14);
-      #endif  
+    { Serial.println("Using SdFat");
+
+      #if USE_SDI0==0
+        SPI.setMOSI(SD_MOSI);
+        SPI.setMISO(SD_MISO);
+        SPI.setSCK(SD_SCK);
+      #endif
       if (!sd.begin(SD_CONFIG)) sd.errorHalt("sd.begin failed");
     
       // Set Time callback
@@ -105,7 +122,6 @@ class c_mFS
     }
 
     void mkDir(char * dirname)  { if(!sd.exists(dirname)) sd.mkdir(dirname);  }
-    
     void chDir(char * dirname)  { sd.chdir(dirname);   }
     
     void exit(void)
