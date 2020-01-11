@@ -59,7 +59,8 @@ UPL_TYCMD_B      :=
 UPL_CLICMD_B     := 
 
 BIN         := bin
-USR_BIN     := $(BIN)/src
+#USR_BIN     := $(BIN)/src		
+USR_BIN     := $(BIN)		
 CORE_BIN    := $(BIN)/core
 LIB_BIN     := $(BIN)/lib
 CORE_LIB    := $(BIN)\core.a
@@ -116,16 +117,23 @@ UPL_CLICMD  := $(UPL_CLICMD_B)\teensy_loader_cli -mmcu=$(MCU) -v $(TARGET_HEX)
 rwildcard =$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 #User Sources -----------------------------------------------------------------
-USR_CPP_FILES  := $(call rwildcard,$(USR_SRC)/,*.cpp)
-USR_C_FILES    := $(call rwildcard,$(USR_SRC)/,*.c)
-USR_S_FILES    := $(call rwildcard,$(USR_SRC)/,*.S)
-USR_OBJ        := $(USR_S_FILES:$(USR_SRC)/%.S=$(USR_BIN)/%.o) $(USR_C_FILES:$(USR_SRC)/%.c=$(USR_BIN)/%.o) $(USR_CPP_FILES:$(USR_SRC)/%.cpp=$(USR_BIN)/%.o) 
+USR_CPP_FILES  := $(wildcard *.cpp) $(call rwildcard,$(USR_SRC)/,*.cpp)
+USR_C_FILES    := $(wildcard *.c) $(call rwildcard,$(USR_SRC)/,*.c)
+USR_S_FILES    := $(wildcard *.S) $(call rwildcard,$(USR_SRC)/,*.S)
+#USR_OBJ        := $(USR_S_FILES:$(USR_SRC)/%.S=$(USR_BIN)/%.o)
+#USR_OBJ        += $(USR_C_FILES:$(USR_SRC)/%.c=$(USR_BIN)/%.o) 
+#USR_OBJ        += $(USR_CPP_FILES:$(USR_SRC)/%.cpp=$(USR_BIN)/%.o ./%.cpp=$(USR_BIN)/%.o) 
+USR_OBJ        := $(USR_CPP_FILES:%.cpp=$(USR_BIN)/%.o) 
+USR_OBJ        += $(USR_C_FILES:%.c=$(USR_BIN)/%.o) 
+USR_OBJ        += $(USR_S_FILES:%.S=$(USR_BIN)/%.o) 
 
 # Core library sources --------------------------------------------------------
 CORE_CPP_FILES := $(call rwildcard,$(CORE_SRC)/,*.cpp)
 CORE_C_FILES   := $(call rwildcard,$(CORE_SRC)/,*.c)
 CORE_S_FILES   := $(call rwildcard,$(CORE_SRC)/,*.S)
-CORE_OBJ       := $(CORE_S_FILES:$(CORE_SRC)/%.S=$(CORE_BIN)/%.o) $(CORE_C_FILES:$(CORE_SRC)/%.c=$(CORE_BIN)/%.o) $(CORE_CPP_FILES:$(CORE_SRC)/%.cpp=$(CORE_BIN)/%.o) 
+CORE_OBJ       := $(CORE_S_FILES:$(CORE_SRC)/%.S=$(CORE_BIN)/%.o) 
+CORE_OBJ       += $(CORE_C_FILES:$(CORE_SRC)/%.c=$(CORE_BIN)/%.o) 
+CORE_OBJ       += $(CORE_CPP_FILES:$(CORE_SRC)/%.cpp=$(CORE_BIN)/%.o) 
 
 
 # User library sources  (see) https://github.com/arduino/arduino/wiki/arduino-ide-1.5:-library-specification
@@ -148,7 +156,7 @@ LIB_OBJ         += $(LIB_C_SHARED:$(LIBS_SHARED_BASE)/%.c=$(LIB_BIN)/%.o)  $(LIB
 LIB_OBJ         += $(LIB_S_SHARED:$(LIBS_SHARED_BASE)/%.S=$(LIB_BIN)/%.o)  $(LIB_S_LOCAL:$(LIBS_LOCAL_BASE)/%.S=$(LIB_BIN)/%.o) 
 
 # Includes -------------------------------------------------------------
-INCLUDE        := -I.\$(USR_SRC) -I$(CORE_SRC) 
+INCLUDE        := -I. -I./$(USR_SRC) -I$(CORE_SRC) 
 INCLUDE        += $(foreach d, $(LIB_DIRS_SHARED), -I$d)
 INCLUDE        += $(foreach d, $(LIB_DIRS_LOCAL), -I$d)
 
@@ -238,7 +246,7 @@ $(USR_BIN)/%.o: $(USR_SRC)/%.c
 	@echo USER [CC]  $(notdir $<)	
 	@"$(CC)" $(C_FLAGS) $(INCLUDE) -o "$@" -c $<
 
-$(USR_BIN)/%.o: $(USR_SRC)/%.cpp
+$(USR_BIN)/%.o: %.cpp
 	@echo USER [CPP] $(notdir $<)	
 	@"$(CXX)" $(CPP_FLAGS) $(INCLUDE) -o "$@" -c $<
 
