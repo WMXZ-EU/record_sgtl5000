@@ -60,7 +60,7 @@ UPL_CLICMD_B     :=
 
 BIN         := bin
 #USR_BIN     := $(BIN)/src		
-USR_BIN     := $(BIN)		
+USR_BIN     := $(BIN)
 CORE_BIN    := $(BIN)/core
 LIB_BIN     := $(BIN)/lib
 CORE_LIB    := $(BIN)\core.a
@@ -134,7 +134,6 @@ CORE_S_FILES   := $(call rwildcard,$(CORE_SRC)/,*.S)
 CORE_OBJ       := $(CORE_S_FILES:$(CORE_SRC)/%.S=$(CORE_BIN)/%.o) 
 CORE_OBJ       += $(CORE_C_FILES:$(CORE_SRC)/%.c=$(CORE_BIN)/%.o) 
 CORE_OBJ       += $(CORE_CPP_FILES:$(CORE_SRC)/%.cpp=$(CORE_BIN)/%.o) 
-
 
 # User library sources  (see) https://github.com/arduino/arduino/wiki/arduino-ide-1.5:-library-specification
 LIB_DIRS_SHARED  := $(foreach d, $(LIBS_SHARED), $(LIBS_SHARED_BASE)/$d/ $(LIBS_SHARED_BASE)/$d/utility/)  # base and /utility 
@@ -238,11 +237,11 @@ $(LIB_BIN)/%.o: $(LIBS_LOCAL_BASE)/%.c
 	@"$(CC)" $(C_FLAGS) $(INCLUDE) -o $@ -c $< 
 	
 # Handle user sources ---------------------------------------------------------
-$(USR_BIN)/%.o: $(USR_SRC)/%.S
+$(USR_BIN)/%.o: %.S
 	@echo USER [ASM] $<	
 	@"$(CC)" $(S_FLAGS) $(INCLUDE) -o $@ -c $<
 
-$(USR_BIN)/%.o: $(USR_SRC)/%.c
+$(USR_BIN)/%.o: %.c
 	@echo USER [CC]  $(notdir $<)	
 	@"$(CC)" $(C_FLAGS) $(INCLUDE) -o "$@" -c $<
 

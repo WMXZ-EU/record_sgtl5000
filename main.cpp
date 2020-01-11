@@ -65,7 +65,7 @@ AudioControlSGTL5000 audioShield;
 char * headerUpdate(void)
 {
   static char header[512];
-  sprintf(&header[0], "WMXZ");
+  sprintf(&header[0], "WMXZ"); // MAGIC word for header
   
   sprintf(&header[4], "%04d_%02d_%02d_%02d_%02d_%02d", year(), month(), day(), hour(), minute(), second());
   header[23]=0;
@@ -188,11 +188,13 @@ int32_t record_or_sleep(void)
     else if (tsx < tso)              // check end of file
       ret = -1;
   }
-  if(ret) 
-  {  Serial.print("nsec = ");
-     Serial.println(ret);     
-     Serial.flush();
-  }
+   #if DO_DEBUG>0
+    if(ret) 
+    {  Serial.print("nsec = ");
+      Serial.println(ret);     
+      Serial.flush();
+    }
+  #endif
   tso=tsx;
   //
 	return (ret); 
@@ -203,7 +205,8 @@ int32_t record_or_sleep(void)
 #endif
 
 void printDate(void)
-{ Serial.printf("%04d-%02d-%02d %02d:%02d:%02d\r\n",year(),month(),day(), hour(),minute(),second()); 
+{ 
+   Serial.printf("%04d-%02d-%02d %02d:%02d:%02d\r\n",year(),month(),day(), hour(),minute(),second()); 
 }
 
 void stopAcq(int nsec)
@@ -227,7 +230,7 @@ extern "C" void setup() {
 
   #if defined(__IMXRT1062__)
     set_arm_clock(24000000);
-    #if DO_DEBUG>0
+    #if DO_DEBUG>1
         Serial.print("F_CPU_ACTUAL=");
         Serial.println(F_CPU_ACTUAL);
     #endif
@@ -236,12 +239,14 @@ extern "C" void setup() {
   // set the Time library to use Teensy 3.0's RTC to keep time
   setSyncProvider(getTime);
   delay(100);
-  #if DO_DEBUG >0
+  #if DO_DEBUG >1
     if (timeStatus()!= timeSet) {
       Serial.println("Unable to sync with the RTC");
     } else {
       Serial.println("RTC has set the system time");
     }
+  #endif
+  #if DO_DEBUG >0
     printDate();
   #endif
 
@@ -343,12 +348,15 @@ void loop() {
     //
     // 
     if(mustClose || (outptr == (diskBuffer+BUFFERSIZE)))
-    { if(mustClose) 
-      {
-        Serial.println("Closing A");
-        Serial.println(state);
-        Serial.println((uint32_t)(outptr-diskBuffer));
-      }
+    { 
+      #if DO_DEBUG>1
+        if(mustClose) 
+        {
+          Serial.println("Closing A");
+          Serial.println(state);
+          Serial.println((uint32_t)(outptr-diskBuffer));
+        }
+      #endif
       if(outptr>diskBuffer)
         state=uSD.write(diskBuffer,outptr-diskBuffer, mustClose); // this is blocking
       outptr = diskBuffer;
@@ -367,7 +375,10 @@ void loop() {
     }
 
     if((nsec>0) && (state==0) && (mustClose))  // if file is closed and acquisition ended
-    { Serial.print("mustClose "); Serial.println(state); 
+    { 
+       #if DO_DEBUG>1
+         Serial.print("mustClose "); Serial.println(state); 
+       #endif
       uSD.exit();
       state=-1;
       mustClose=0;
@@ -378,13 +389,16 @@ void loop() {
   { // no audio block usb_serial_available
     // should we close?
     if(state>0 && mustClose)
-    { Serial.println("Closing B");
-      
+    {
+      #if DO_DEBUG>1
+       Serial.println("Closing B");
+      #endif
       //but first write remaining data to disk
       state=uSD.write(diskBuffer,outptr-diskBuffer, mustClose); // this is blocking
       outptr = diskBuffer;
-      if(mustClose) { Serial.print("stateB = "); Serial.println(state);}
-
+      #if DO_DEBUG>1
+        if(mustClose) { Serial.print("stateB = "); Serial.println(state);}
+      #endif
       mustClose=0;
       if(nsec>0)
       { stopAcq(nsec);
