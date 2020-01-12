@@ -219,6 +219,8 @@ void stopAcq(int nsec)
   setWakeupCallandSleep(nsec);
 }
 
+#include "menu.h"
+extern int do_acq;
 
 extern "C" void setup() {
   // put your setup code here, to run once:
@@ -254,7 +256,10 @@ extern "C" void setup() {
   
   audioShield.enable();
   audioShield.inputSelect(AUDIO_SELECT);  //AUDIO_INPUT_LINEIN or AUDIO_INPUT_MIC
-   //
+
+  //
+  //while(millis() < millis()+5000) continue;
+  //
   I2S_modification(fsamps[FSI],32);
   delay(10);
   SGTL5000_modification(FSI); // must be called after I2S initialization stabilized 
@@ -275,6 +280,7 @@ extern "C" void setup() {
     Serial.print("Fsamp "); Serial.println(fsamps[FSI]);
     Serial.println("start");
   #endif
+
   for(int ii=0; ii<NCH; ii++) queue[ii].begin();
 }
 
@@ -285,6 +291,11 @@ void loop() {
   static int16_t state=0; // 0: open new file, -1: last file
   static uint32_t tMax=0;
 
+  if(state==0) 
+  { doMenu();
+    if(do_acq==0) return;
+  }
+  
   if(state<0) return;
 
   int16_t *data;

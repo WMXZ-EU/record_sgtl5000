@@ -1,12 +1,17 @@
-{
+{  "env": {
+      "ROOT0": "C:/Users/zimme/Documents/arduino-1.8.10/hardware/teensy/avr",
+      "LOCAL_LIBRARIES": "C:/Users/zimme/Documents/Arduino/libraries"
+  },
   "configurations": [
     {
       "name": "VisualTeensy",
       "includePath": [
         "./**",
-        "C:/Users/zimme/Documents/Arduino/libraries/**",
-        "C:/Users/zimme/Documents/arduino-1.8.10/hardware/teensy/avr/libraries/**",
-        "C:/Users/zimme/Documents/arduino-1.8.10/hardware/teensy/avr/cores/teensy4/**"
+        "${LOCAL_LIBRARIES}/SdFat-beta/**",
+        "${LOCAL_LIBRARIES}/MTP_t4/**",
+        "${ROOT0}/libraries/SPI/**",
+        "${ROOT0}/libraries/Time/**",
+        "${ROOT0}/cores/Teensy4"
       ],
       "defines": [
         "__IMXRT1062__",
@@ -16,7 +21,7 @@
         "LAYOUT_US_ENGLISH",
         "ARDUINO"
       ],
-      "compilerPath": "C:/Users/zimme/Documents/arduino-1.8.10/hardware/tools/arm/bin/arm-none-eabi-gcc.exe",
+      "compilerPath": "${ROOT0}/../..//tools/arm/bin/arm-none-eabi-gcc.exe",
       "intelliSenseMode": "gcc-x64"
     }
   ],
