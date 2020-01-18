@@ -28,38 +28,75 @@
 
 #include "config.h"
 int do_acq = 0;
+int gain = 8;
+int fr = 3;
+
+int boundaryCheck(int val, int minVal, int maxVal)
+{
+  if(minVal < maxVal) // standard case
+  {
+    if(val<minVal) val=minVal;
+    if(val>maxVal) val=maxVal;
+  }
+  else 
+  {
+    if(val>minVal) val=minVal;
+    if(val<maxVal) val=maxVal;
+  }
+  return val; 
+}
 
 static void printAll(void)
 {
-  Serial.println();
-  Serial.println("exter 'a' to print this");
-  Serial.println();
-  Serial.println("exter '?c' to read value c=(g,d,t)");
-  Serial.println("  e.g.: ?g will print gain");
-  Serial.println();
-  Serial.println("exter '!cv' to write value c=(g,d,t) and v is new value");
-  Serial.println("  e.g.: !g1 will set gain to 1<<1");
-  Serial.println();
-  Serial.println("exter 'xv' to exit menu (v is delay in seconds, -1 means immediate)");
-  Serial.println("  e.g.: x10 will exit and hibernate for 10 seconds");
-  Serial.println("        x-1 with exit and start immediately");
-  Serial.println();
-  Serial.println("exter ':c' to exter system command c=(s,c)");
-  Serial.println("  e.g ':s' to stop acquisition");
-  Serial.println("      ':c' to continue acquisition");
-  Serial.println();
-
+    Serial.printf("\n%02d-%02d-%04d %02:%02d:%02d\n",day(),month(),year(), hour(),minute(),second());
+    Serial.println();
+    Serial.println("exter 'a' to print this");
+    Serial.println();
+    Serial.println("exter '?c' to read value c=(g,f)");
+    Serial.println("  e.g.: ?g will print gain");
+    Serial.println();
+    Serial.println("exter '!cv' to write value c=(g,f) and v is new value");
+    Serial.println("  e.g.: !g1 will set gain to 1<<1");
+    Serial.println();
+    Serial.println("exter 'xv' to exit menu (v is delay in seconds, -1 means immediate)");
+    Serial.println("  e.g.: x10 will exit and hibernate for 10 seconds");
+    Serial.println("        x-1 with exit and start immediately");
+    Serial.println();
+    Serial.println("exter ':c' to exter system command c=(s,c)");
+    Serial.println("  e.g ':s' to stop acquisition");
+    Serial.println("      ':c' to continue acquisition");
+    Serial.println();
 }
+
 static void doMenu1(void) // ?
 {
     while(!Serial.available());
     char c=Serial.read();
-
+    if (strchr("gf", c))
+    { switch (c)
+      {
+        case 'g': Serial.printf("%d\r\n",gain); break;
+        case 'f': Serial.printf("%d: %d\r\n",fr, fsamps[fr]); break;
+      }
+    }
 }
 
 static void doMenu2(void) // !
 {   while(!Serial.available());
     char c=Serial.read();
+    if (strchr("gf", c))
+    { switch (c)
+      {
+        case 'g': gain = boundaryCheck(Serial.parseInt(),8,24); break;
+        case 'f': 
+            fr   = Serial.parseInt(); 
+            if(fr == boundaryCheck(fr,0,8));  break;
+            Serial.println("Allowed frequency indices are:")
+            for(ii=0;ii<sizeof(fsamps)/sizeof(fsamps[0];ii++)) 
+            { Serial.print(ii); Serial.print(": "); Serial.print(fsamps[ii]); Serial.println();  }
+            break;
+      }
+    }
 }
 
 static void doMenu3(void) // :
