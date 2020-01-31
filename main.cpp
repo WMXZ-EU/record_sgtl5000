@@ -219,15 +219,16 @@ void stopAcq(int nsec)
   setWakeupCallandSleep(nsec);
 }
 
-#include "menu.h"
+//#include "menu.h"
 extern int do_acq;
+int do_acq;
 
 extern "C" void setup() {
   // put your setup code here, to run once:
 
   #if DO_DEBUG>0
     while(!Serial && (millis()<3000));// asm("wfi");
-    Serial.println("\nVersion: " __DATE__ " " __TIME__);
+    Serial.println("\nVersion: "  __DATE__  " "  __TIME__);
   #endif
 
   #if defined(__IMXRT1062__)
@@ -252,7 +253,7 @@ extern "C" void setup() {
     printDate();
   #endif
 
-  mAudioMemory(MQUEU+6);
+  mAudioMemory16((MQUEU+6));
   
   audioShield.enable();
   audioShield.inputSelect(AUDIO_SELECT);  //AUDIO_INPUT_LINEIN or AUDIO_INPUT_MIC
@@ -282,6 +283,8 @@ extern "C" void setup() {
   #endif
 
   for(int ii=0; ii<NCH; ii++) queue[ii].begin();
+
+  do_acq=1;
 }
 
 int16_t tmpStore[NCH*128]; // temporary buffer
@@ -292,7 +295,7 @@ void loop() {
   static uint32_t tMax=0;
 
   if(state==0) 
-  { doMenu();
+  { //doMenu();
     if(do_acq==0) return;
   }
   
@@ -459,5 +462,5 @@ void loop() {
   #endif
 
   //
-//  asm("wfi"); // to save some power switch off idle cpu
+  asm("wfi"); // to save some power switch off idle cpu
 }

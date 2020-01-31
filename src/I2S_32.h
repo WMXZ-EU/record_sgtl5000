@@ -156,8 +156,10 @@ void I2S_32::isr32(void)
   if (left != NULL && right != NULL) {
     offset = I2S_32::block_offset;
     if (offset <= AUDIO_BLOCK_SAMPLES_NCH/2) {
-      dest_left  = &(left->data[offset]);
-      dest_right = &(right->data[offset]);
+//      dest_left  = &(left->data[offset]);
+//      dest_right = &(right->data[offset]);
+      dest_left  = (int16_t *)left->data + offset;
+      dest_right = (int16_t *)right->data + offset;
       I2S_32::block_offset = offset + AUDIO_BLOCK_SAMPLES_NCH/2;
       do {
         *dest_left++  = (*src++)>>I2S_32::shift; // left side may be 16 or 32 bit
