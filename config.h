@@ -23,7 +23,6 @@
 #define CONFIG_H
 
 uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 384000};
-const int ifs = 4;
 /*
  * NOTE: changing frequency impacts the macros 
  *      AudioProcessorUsage and AudioProcessorUsageMax

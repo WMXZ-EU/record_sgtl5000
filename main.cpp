@@ -64,11 +64,12 @@
     typedef int32_t data_t;
   #endif
 #endif
-
 #include "control_sgtl5000.h"
 AudioControlSGTL5000 audioShield;
 
 // private 'library' included directly into sketch
+#include "sgtl5000_mods.h"
+
 #include "logger_if.h"
 #include "hibernate.h"
 
@@ -244,7 +245,7 @@ void stopAcq(int nsec)
 
 int do_acq = 1;
 int gain = 8;
-int fr = ifs;
+int fr = FSI;
 
 #include "menu.h"
 
@@ -288,9 +289,9 @@ extern "C" void setup() {
   audioShield.inputSelect(AUDIO_SELECT);  //AUDIO_INPUT_LINEIN or AUDIO_INPUT_MIC
 
   //
-  I2S_modification(fsamps[FSI],32);
+  I2S_modification(fsamps[fr],32);
   delay(10);
-  SGTL5000_modification(FSI); // must be called after I2S initialization stabilized 
+  SGTL5000_modification(fr); // must be called after I2S initialization stabilized 
   //(0: 8kHz, 1: 16 kHz 2:32 kHz, 3:44.1 kHz, 4:48 kHz, 5:96 kHz, 6:192 kHz, 7:384kHz)
   
   if(AUDIO_SELECT == AUDIO_INPUT_MIC)

@@ -50,23 +50,26 @@ int boundaryCheck(int val, int minVal, int maxVal)
 
 static void printAll(void)
 {
-    Serial.printf("\n%02d-%02d-%04d %02:%02d:%02d\n",day(),month(),year(), hour(),minute(),second());
+    Serial.printf("\n%02d-%02d-%04d %02d:%02d:%02d\n",day(),month(),year(), hour(),minute(),second());
+    Serial.printf("g: shift  %d\n",gain);
+    Serial.printf("f: fsamp  %d: %d Hz\n",fr, fsamps[fr]);
+
     Serial.println();
     Serial.println("exter 'a' to print this");
     Serial.println();
-    Serial.println("exter '?c' to read value c=(g,f)");
-    Serial.println("  e.g.: ?g will print gain");
+    Serial.println("exter     '?c'   to read value c=(g,f)");
+    Serial.println("  e.g.:   '?g'   will print right shift");
     Serial.println();
-    Serial.println("exter '!cv' to write value c=(g,f) and v is new value");
-    Serial.println("  e.g.: !g1 will set gain to 1<<1");
+    Serial.println("exter    '!cv'   to write value c=(g,f) and v is new value");
+    Serial.println("  e.g.:  '!g8'   will set shift to 8 to  data>>8");
     Serial.println();
-    Serial.println("exter 'xv' to exit menu (v is delay in seconds, -1 means immediate)");
-    Serial.println("  e.g.: x10 will exit and hibernate for 10 seconds");
-    Serial.println("        x-1 with exit and start immediately");
+    Serial.println("exter    'xv'    to exit menu");
+    Serial.println("  e.g.:  'x10'   will exit menu and hibernate for 10 seconds");
+    Serial.println("          'x-1'  with exit menu and start immediately");
     Serial.println();
-    Serial.println("exter ':c' to exter system command c=(s,c)");
-    Serial.println("  e.g ':s' to stop acquisition");
-    Serial.println("      ':c' to continue acquisition");
+    Serial.println("exter    ':c'    to exter system command c=(s,c)");
+    Serial.println("  e.g.:  ':s'    to stop acquisition");
+    Serial.println("         ':c'    to continue acquisition");
     Serial.println();
 }
 
