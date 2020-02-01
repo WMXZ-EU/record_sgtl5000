@@ -1,22 +1,57 @@
 {
+  "env": {
+    "ROOT0": "C:/Users/zimme/Documents/arduino-1.8.11/hardware/teensy/avr",
+    "LOCAL_LIBRARIES": "C:/Users/zimme/Documents/Arduino/libraries",
+    "USB_TYPE": "USB_SERIAL",
+    "TD_VERSION": "150"
+  },
   "configurations": [
     {
-      "name": "VisualTeensy",
+      "name": "Teensy 36",
       "includePath": [
-        "./**",
-        "C:/Users/zimme/Documents/Arduino/libraries/**",
-        "C:/Users/zimme/Documents/arduino-1.8.10/hardware/teensy/avr/libraries/**",
-        "C:/Users/zimme/Documents/arduino-1.8.10/hardware/teensy/avr/cores/teensy4/**"
+        "src/**",
+        "${ROOT0}/cores/teensy3",
+        "${ROOT0}/libraries/Audio/**",
+        "${ROOT0}/libraries/SPI/**",
+        "${ROOT0}/libraries/Time/**",
+        "${LOCAL_LIBRARIES}/SdFat-beta/**",
+        "${LOCAL_LIBRARIES}/MTP_t4/**"
       ],
+      "forcedInclude": [],
       "defines": [
-        "__IMXRT1062__",
-        "TEENSYDUINO=144",
-        "F_CPU=396000000",
-        "USB_SERIAL",
+        "__MK66FX1M0__",
+        "ARDUINO_TEENSY40",
+        "TEENSYDUINO=${TD_VERSION}",
+        "F_CPU=96000000",
+        "${USB_TYPE}",
         "LAYOUT_US_ENGLISH",
         "ARDUINO"
       ],
-      "compilerPath": "C:/Users/zimme/Documents/arduino-1.8.10/hardware/tools/arm/bin/arm-none-eabi-gcc.exe",
+      "compilerPath": "${ROOT0}/../../tools/arm/bin/arm-none-eabi-gcc.exe",
+      "intelliSenseMode": "gcc-x64"
+    },
+    {
+      "name": "Teensy 40",
+      "includePath": [
+        "src/**",
+        "${ROOT0}/cores/teensy4",
+        "${ROOT0}/libraries/Audio/**",
+        "${ROOT0}/libraries/SPI/**",
+        "${ROOT0}/libraries/Time/**",
+        "${LOCAL_LIBRARIES}/SdFat-beta/**",
+        "${LOCAL_LIBRARIES}/MTP_t4/**"
+      ],
+      "forcedInclude": [],
+      "defines": [
+        "__IMXRT1062__",
+        "ARDUINO_TEENSY40",
+        "TEENSYDUINO=${TD_VERSION}",
+        "F_CPU=600000000",
+        "${USB_TYPE}",
+        "LAYOUT_US_ENGLISH",
+        "ARDUINO"
+      ],
+      "compilerPath": "${ROOT0}/../../tools/arm/bin/arm-none-eabi-gcc.exe",
       "intelliSenseMode": "gcc-x64"
     }
   ],

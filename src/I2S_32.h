@@ -39,6 +39,15 @@
   #define NBYTE 2
 #endif
 
+#ifndef HAVE_DATA_T
+  #define HAVE_DATA_T
+  #if NBYTE==2
+    typedef int16_t data_t;
+  #elif NBYTE==4
+    typedef int32_t data_t;
+  #endif
+#endif
+
 #if defined(__IMXRT1062__)
  #include "imxrt_hw.h"
 #endif
@@ -125,11 +134,10 @@ void I2S_32::isr32(void)
 {
   uint32_t daddr, offset;
   const int32_t *src, *end;
-  #if NBYTE==2
-    int16_t *dest_left, *dest_right;
-  #elif NBYTE==4
-    int32_t *dest_left, *dest_right;
-  #endif
+
+//  char * dest_left, *dest_right;
+  
+  data_t *dest_left, *dest_right; 
   audio_block_t *left, *right;
 
   daddr = (uint32_t)(dma.TCD->DADDR);
@@ -156,9 +164,12 @@ void I2S_32::isr32(void)
   if (left != NULL && right != NULL) {
     offset = I2S_32::block_offset;
     if (offset <= AUDIO_BLOCK_SAMPLES_NCH/2) {
-      dest_left  = &(left->data[offset]);
-      dest_right = &(right->data[offset]);
-      I2S_32::block_offset = offset + AUDIO_BLOCK_SAMPLES_NCH/2;
+//      dest_left  = &(left->data[offset]);
+//      dest_right = &(right->data[offset]);
+      dest_left  = (data_t *) ((char *)left->data + left->dataSize * offset);
+      dest_right = (data_t *) ((char *)right->data + right->dataSize * offset);
+      I2S_32::block_offset = offset + AUDIO_BLOCK_SAMPLES_NCH/2; 
+
       do {
         *dest_left++  = (*src++)>>I2S_32::shift; // left side may be 16 or 32 bit
         *dest_right++ = (*src++)>>I2S_32::shift;
@@ -264,7 +275,7 @@ void I2S_32::config_i2s(void)
 
 #elif defined (__IMXRT1062__)
 
-#define AUDIO_SAMPLE_RATE_EXACT 44100
+#define AUDIO_SAMPLE_RATE_EXACT 44100 // used for initialization
 void I2S_32::config_i2s(void)
 {
 	CCM_CCGR5 |= CCM_CCGR5_SAI1(CCM_CCGR_ON);

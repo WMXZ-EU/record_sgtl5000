@@ -21,4 +21,4 @@
  */
  
 // File is empty to please Arduino
-// all main code is in app.cpp
+// all main code is in main.cpp

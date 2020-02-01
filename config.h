@@ -30,9 +30,9 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 384000};
  */
 
 #define DO_DEBUG 1
-#define FSI 3// desired sampling frequency index
+#define FSI 4   // desired sampling frequency index into fsamps
 #define NCH 1
-#define NBYTE 2
+#define NBYTE 2 // data word size
 
 #define PJRC 0  // use core audio SW
 #define WMXZ 1  // use WMXZ audio SW
@@ -63,7 +63,7 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 384000};
 
 // times for acquisition and filing
 uint32_t a_on = 60; // acquisition on time
-uint32_t a_off =60; // acquisition off time
+uint32_t a_off =0; // acquisition off time
 uint32_t t_on = 20; // file on time
 
 uint16_t r_h1s =  8;   // start of record period 1

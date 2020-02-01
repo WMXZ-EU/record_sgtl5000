@@ -1,12 +1,12 @@
-{
-  "tasks": [
+{ 
+  "command": "C:/Users/zimme/Documents/Arduino/make.exe",
+    "tasks": [
     {
       "label": "Build",
       "group": {
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
       "args": [
         "all",
         "-j",
@@ -19,7 +19,6 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
       "args": [
         "rebuild",
         "-j",
@@ -32,7 +31,6 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
       "args": [
         "clean"
       ]
@@ -43,35 +41,8 @@
         "kind": "build",
         "isDefault": true
       },
-      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
       "args": [
         "upload",
-        "-j",
-        "-Otarget"
-      ]
-    },
-    {
-      "label": "Upload (TyCommander)",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
-      "args": [
-        "uploadTy",
-        "-j",
-        "-Otarget"
-      ]
-    },
-    {
-      "label": "Upload (CLI)",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "command": "C:/Users/zimme/Documents/Arduino/make.exe",
-      "args": [
-        "uploadCLI",
         "-j",
         "-Otarget"
       ]

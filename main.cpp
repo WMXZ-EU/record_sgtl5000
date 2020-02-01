@@ -38,6 +38,7 @@
     AudioConnection     patchCord1(acq,0, queue[0],0);
     AudioConnection     patchCord2(acq,1, queue[1],0);
   #endif
+
 #elif AUDIO_MODE==WMXZ
   #include "i2s_mods.h"
   #include "I2S_32.h"
@@ -52,12 +53,23 @@
     mAudioConnection     patchCord1(acq,0, queue[0],0);
     mAudioConnection     patchCord2(acq,1, queue[1],0);
   #endif
+
 #endif
 
+#ifndef HAVE_DATA_T
+  #define HAVE_DATA_T
+  #if NBYTE==2
+    typedef int16_t data_t;
+  #elif NBYTE==4
+    typedef int32_t data_t;
+  #endif
+#endif
 #include "control_sgtl5000.h"
 AudioControlSGTL5000 audioShield;
 
 // private 'library' included directly into sketch
+#include "sgtl5000_mods.h"
+
 #include "logger_if.h"
 #include "hibernate.h"
 
@@ -65,7 +77,7 @@ AudioControlSGTL5000 audioShield;
 char * headerUpdate(void)
 {
   static char header[512];
-  sprintf(&header[0], "WMXZ");
+  sprintf(&header[0], "WMXZ"); // MAGIC word for header
   
   sprintf(&header[4], "%04d_%02d_%02d_%02d_%02d_%02d", year(), month(), day(), hour(), minute(), second());
   header[23]=0;
@@ -188,11 +200,13 @@ int32_t record_or_sleep(void)
     else if (tsx < tso)              // check end of file
       ret = -1;
   }
-  if(ret) 
-  {  Serial.print("nsec = ");
-     Serial.println(ret);     
-     Serial.flush();
-  }
+   #if DO_DEBUG>0
+    if(ret) 
+    {  Serial.print("nsec = ");
+      Serial.println(ret);     
+      Serial.flush();
+    }
+  #endif
   tso=tsx;
   //
 	return (ret); 
@@ -203,7 +217,20 @@ int32_t record_or_sleep(void)
 #endif
 
 void printDate(void)
-{ Serial.printf("%04d-%02d-%02d %02d:%02d:%02d\r\n",year(),month(),day(), hour(),minute(),second()); 
+{ 
+   Serial.printf("%04d-%02d-%02d %02d:%02d:%02d\r\n",year(),month(),day(), hour(),minute(),second()); 
+}
+
+extern int do_acq;
+void startAcq(void)
+{
+  #if DO_DEBUG >0
+    printDate();
+  #endif
+  SGTL5000_enable();
+  I2S_startClock();
+  do_acq=1;
+  for(int ii=0; ii<NCH; ii++) queue[ii].clear();
 }
 
 void stopAcq(int nsec)
@@ -216,18 +243,23 @@ void stopAcq(int nsec)
   setWakeupCallandSleep(nsec);
 }
 
+int do_acq = 1;
+int gain = 8;
+int fr = FSI;
+
+#include "menu.h"
 
 extern "C" void setup() {
   // put your setup code here, to run once:
 
   #if DO_DEBUG>0
-    while(!Serial && (millis()<3000));// asm("wfi");
-    Serial.println("\nVersion: " __DATE__ " " __TIME__);
+    while(!Serial && (millis()<3000));
+    Serial.println("\nVersion: "  __DATE__  " "  __TIME__);
   #endif
 
   #if defined(__IMXRT1062__)
     set_arm_clock(24000000);
-    #if DO_DEBUG>0
+    #if DO_DEBUG>1
         Serial.print("F_CPU_ACTUAL=");
         Serial.println(F_CPU_ACTUAL);
     #endif
@@ -236,23 +268,30 @@ extern "C" void setup() {
   // set the Time library to use Teensy 3.0's RTC to keep time
   setSyncProvider(getTime);
   delay(100);
-  #if DO_DEBUG >0
+  #if DO_DEBUG >1
     if (timeStatus()!= timeSet) {
       Serial.println("Unable to sync with the RTC");
     } else {
       Serial.println("RTC has set the system time");
     }
+  #endif
+  #if DO_DEBUG >0
     printDate();
   #endif
 
-  mAudioMemory(MQUEU+6);
-  
+  #if NBYTE==2
+    mAudioMemory16((MQUEU+6));
+  #elif NBYTE==4
+    mAudioMemory32((MQUEU+6));
+  #endif
+
   audioShield.enable();
   audioShield.inputSelect(AUDIO_SELECT);  //AUDIO_INPUT_LINEIN or AUDIO_INPUT_MIC
-   //
-  I2S_modification(fsamps[FSI],32);
+
+  //
+  I2S_modification(fsamps[fr],32);
   delay(10);
-  SGTL5000_modification(FSI); // must be called after I2S initialization stabilized 
+  SGTL5000_modification(fr); // must be called after I2S initialization stabilized 
   //(0: 8kHz, 1: 16 kHz 2:32 kHz, 3:44.1 kHz, 4:48 kHz, 5:96 kHz, 6:192 kHz, 7:384kHz)
   
   if(AUDIO_SELECT == AUDIO_INPUT_MIC)
@@ -270,26 +309,37 @@ extern "C" void setup() {
     Serial.print("Fsamp "); Serial.println(fsamps[FSI]);
     Serial.println("start");
   #endif
+
   for(int ii=0; ii<NCH; ii++) queue[ii].begin();
+
 }
 
-int16_t tmpStore[NCH*128]; // temporary buffer
+data_t tmpStore[NCH*128]; // temporary buffer
 
 void loop() {
   // put your main code here, to run repeatedly:
   static int16_t state=0; // 0: open new file, -1: last file
   static uint32_t tMax=0;
 
+  static uint32_t t3=millis();
+
   if(state<0) return;
 
-  int16_t *data;
+  int mustClose;
+  int ret =doMenu();
+  if(ret>2) stopAcq(ret);
+  if(ret<0) 
+  { Serial.print(state); Serial.print(" "); Serial.print(do_acq); Serial.print(" "); Serial.println();
+    do_acq=1; state=0; t3=millis(); startAcq();}
 
-  static uint32_t t3=millis();
+  mustClose = (do_acq==0);
+  
+  data_t *data;
+
   uint32_t t1=millis();
 
   // check if we should continue to record, close file or hibernate
   int32_t nsec=0;
-  int mustClose;
 
   nsec=0;
   mustClose=0;
@@ -319,10 +369,10 @@ void loop() {
     // fetch data from queue and multiplex channels
     for(int ii=0; ii<NCH; ii++)
     {
-      data = (int16_t *)queue[ii].readBuffer(); 
+      data = (data_t *)queue[ii].readBuffer(); 
       //
       // copy to temporary buffer
-      int16_t *ptr= &tmpStore[ii];
+      data_t *ptr= &tmpStore[ii];
       for(int jj=0; jj<128; jj+=NCH) ptr[jj] = data[jj];
       //
       queue[ii].freeBuffer();
@@ -334,23 +384,27 @@ void loop() {
 //    ndat=128;
  
     //copy to disk buffer
-    int16_t *ptr1=(int16_t *) outptr;
-    int16_t *ptr2=(int16_t *) tmpStore;
+    data_t *ptr1=(int16_t *) outptr;
+    data_t *ptr2=(int16_t *) tmpStore;
     for(int jj=0; jj<NCH*ndat; jj++) ptr1[jj] = ptr2[jj];
     //
     // advance buffer pointer
-    outptr += (NCH*ndat); // (NCH*ndat shorts)
+    outptr += (NCH*ndat); // (NCH*ndat  words)
     //
     // 
     if(mustClose || (outptr == (diskBuffer+BUFFERSIZE)))
-    { if(mustClose) 
-      {
-        Serial.println("Closing A");
-        Serial.println(state);
-        Serial.println((uint32_t)(outptr-diskBuffer));
-      }
+    { 
+      #if DO_DEBUG>1
+        if(mustClose) 
+        {
+          Serial.println("Closing A");
+          Serial.println(state);
+          Serial.println((uint32_t)(outptr-diskBuffer));
+        }
+      #endif
       if(outptr>diskBuffer)
         state=uSD.write(diskBuffer,outptr-diskBuffer, mustClose); // this is blocking
+      //
       outptr = diskBuffer;
       if(mustClose) 
       { Serial.print("stateA = "); Serial.println(state);
@@ -359,15 +413,18 @@ void loop() {
     //
     if(ndat<128)
     { // copy rest to disk buffer
-      int16_t *ptr1=(int16_t *) outptr;
-      int16_t *ptr2=(int16_t *) &tmpStore[NCH*ndat];
+      data_t *ptr1=(data_t *) outptr;
+      data_t *ptr2=(data_t *) &tmpStore[NCH*ndat];
       for(int jj=0; jj<NCH*(128-ndat); jj++) ptr1[jj] = ptr2[jj];
       //
       outptr += (NCH*(128-ndat));
     }
 
     if((nsec>0) && (state==0) && (mustClose))  // if file is closed and acquisition ended
-    { Serial.print("mustClose "); Serial.println(state); 
+    { 
+       #if DO_DEBUG>1
+         Serial.print("mustClose "); Serial.println(state); 
+       #endif
       uSD.exit();
       state=-1;
       mustClose=0;
@@ -378,13 +435,16 @@ void loop() {
   { // no audio block usb_serial_available
     // should we close?
     if(state>0 && mustClose)
-    { Serial.println("Closing B");
-      
+    {
+      #if DO_DEBUG>1
+       Serial.println("Closing B");
+      #endif
       //but first write remaining data to disk
       state=uSD.write(diskBuffer,outptr-diskBuffer, mustClose); // this is blocking
       outptr = diskBuffer;
-      if(mustClose) { Serial.print("stateB = "); Serial.println(state);}
-
+      #if DO_DEBUG>1
+        if(mustClose) { Serial.print("stateB = "); Serial.println(state);}
+      #endif
       mustClose=0;
       if(nsec>0)
       { stopAcq(nsec);
@@ -399,10 +459,8 @@ void loop() {
         Serial.println("I2S crashed ?");
         printDate();
       #endif
+
       uSD.close();
-//      state=-1;
-//      mustClose=0;
-//      setWakeupCallandSleep(10);
       stopAcq(10);
       return;
     }
@@ -434,5 +492,5 @@ void loop() {
   #endif
 
   //
-//  asm("wfi"); // to save some power switch off idle cpu
+  //asm("wfi"); // to save some power switch off idle cpu
 }

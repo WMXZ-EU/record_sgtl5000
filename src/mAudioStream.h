@@ -75,10 +75,18 @@
 
 #define AUDIO_BLOCK_SAMPLES_NCH (AUDIO_BLOCK_SAMPLES*NCH)
 
-#define mAudioMemory(num) ({ \
+#define mAudioMemory16(num) ({ \
 	static audio_block_t audio_data[num]; \
-	mAudioStream::initialize_memory(audio_data, num); \
+  static int16_t audioBuffer[num*AUDIO_BLOCK_SAMPLES_NCH]; \
+	mAudioStream::initialize_memory(audio_data, num, audioBuffer, sizeof(audioBuffer[0])); \
 })
+
+#define mAudioMemory32(num) ({ \
+	static audio_block_t audio_data[num]; \
+  static int32_t audioBuffer[num*AUDIO_BLOCK_SAMPLES_NCH]; \
+	mAudioStream::initialize_memory(audio_data, num, audioBuffer, sizeof(audioBuffer[0])); \
+})
+
 #define mAudioMemoryUsageMax() (mAudioStream::memory_used_max)
 #define mAudioMemoryUsageMaxReset() (mAudioStream::memory_used_max = mAudioStream::memory_used)
 
@@ -87,15 +95,16 @@ class mAudioConnection;
 
 typedef struct audio_block_struct {
   uint8_t  ref_count;
-  uint8_t  reserved1;
+  uint8_t  dataSize;
   uint16_t memory_pool_index;
-  #if NBYTE==2
-    int16_t  data[AUDIO_BLOCK_SAMPLES_NCH];
-  #elif NBYTE==4
-    int32_t  data[AUDIO_BLOCK_SAMPLES_NCH];
-  #else
-    #error "wrong wordsize"
-  #endif
+  void * data;
+//  #if NBYTE==2
+//    int16_t  data[AUDIO_BLOCK_SAMPLES_NCH];
+//  #elif NBYTE==4
+//    int32_t  data[AUDIO_BLOCK_SAMPLES_NCH];
+//  #else
+//    #error "wrong wordsize"
+//  #endif
 } audio_block_t;
 
 
@@ -144,7 +153,8 @@ public:
       next_update = NULL;
     }
 
-  static void initialize_memory(audio_block_t *data, unsigned int num);
+//  static void initialize_memory(audio_block_t *data, unsigned int num);
+  static void initialize_memory(audio_block_t *data, unsigned int num, void *buffer, unsigned int element_size);
   static uint16_t memory_used;
   static uint16_t memory_used_max;
 protected:
@@ -170,6 +180,8 @@ private:
   static audio_block_t *memory_pool;
   static uint32_t memory_pool_available_mask[];
   static uint16_t memory_pool_first_mask;
+
+  static uint16_t dataSize;
 };
 
 #if NBYTE==2
@@ -212,12 +224,17 @@ uint16_t mAudioStream::memory_pool_first_mask;
 uint16_t mAudioStream::memory_used = 0;
 uint16_t mAudioStream::memory_used_max = 0;
 
+uint16_t mAudioStream::dataSize = 2;
+
 // Set up the pool of audio data blocks
 // placing them all onto the free list
-void mAudioStream::initialize_memory(audio_block_t *data, unsigned int num)
+//void mAudioStream::initialize_memory(audio_block_t *data, unsigned int num)
+void mAudioStream::initialize_memory(audio_block_t *data, unsigned int num, void *dataBuffers, unsigned int element_size)
 {
   unsigned int i;
   unsigned int maxnum = MAX_BLOCKS;
+
+  dataSize=element_size;
 
   if (num > maxnum) num = maxnum;
   __disable_irq();
@@ -231,6 +248,10 @@ void mAudioStream::initialize_memory(audio_block_t *data, unsigned int num)
   }
   for (i=0; i < num; i++) {
     data[i].memory_pool_index = i;
+    data[i].dataSize = element_size;
+    if (dataBuffers) { 
+			data[i].data = (char *)dataBuffers + i*dataSize*AUDIO_BLOCK_SAMPLES; 
+		}
   }
   __enable_irq();
 
@@ -340,7 +361,7 @@ audio_block_t * mAudioStream::receiveWritable(unsigned int index)
   inputQueue[index] = NULL;
   if (in && in->ref_count > 1) {
     p = allocate();
-    if (p) memcpy(p->data, in->data, sizeof(p->data));
+    if (p) memcpy(p->data, in->data, p->dataSize * AUDIO_BLOCK_SAMPLES);
     in->ref_count--;
     in = p;
   }
