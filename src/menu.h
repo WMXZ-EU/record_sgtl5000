@@ -55,21 +55,21 @@ static void printAll(void)
     Serial.printf("f: fsamp  %d: %d Hz\n",fr, fsamps[fr]);
 
     Serial.println();
-    Serial.println("exter 'a' to print this");
+    Serial.println("enter    'a'    to print this");
     Serial.println();
-    Serial.println("exter     '?c'   to read value c=(g,f)");
-    Serial.println("  e.g.:   '?g'   will print right shift");
+    Serial.println("exter    '?c'   to read value c=(g,f)");
+    Serial.println("  e.g.:  '?g'   will print right shift");
     Serial.println();
-    Serial.println("exter    '!cv'   to write value c=(g,f) and v is new value");
-    Serial.println("  e.g.:  '!g8'   will set shift to 8 to  data>>8");
+    Serial.println("exter    '!cv'  to write value c=(g,f) and v is new value");
+    Serial.println("  e.g.:  '!g8'  will set shift to 8 to  data>>8");
     Serial.println();
-    Serial.println("exter    'xv'    to exit menu");
-    Serial.println("  e.g.:  'x10'   will exit menu and hibernate for 10 seconds");
-    Serial.println("          'x-1'  with exit menu and start immediately");
+    Serial.println("exter    'xv'   to exit menu");
+    Serial.println("  e.g.:  'x10'  will exit menu and hibernate for 10 seconds");
+    Serial.println("         'x-1'  with exit menu and start immediately");
     Serial.println();
-    Serial.println("exter    ':c'    to exter system command c=(s,c)");
-    Serial.println("  e.g.:  ':s'    to stop acquisition");
-    Serial.println("         ':c'    to continue acquisition");
+    Serial.println("exter    ':c'   to exter system command c=(s,c)");
+    Serial.println("  e.g.:  ':s'   to stop acquisition");
+    Serial.println("         ':c'   to continue acquisition");
     Serial.println();
 }
 
