@@ -16,12 +16,14 @@ export SHELL
 
 TARGET_NAME      := record_sgtl5000
 
-#MCU  			:= mk66fx1m0
-MCU   			:= imxrt1062
+#BOARD_ID	    := TEENSY36
+BOARD_ID	    := TEENSY40
+
+USB_DEVICE		:= USB_SERIAL
 
 ROOT0 			:= C:\Users\zimme\Documents
 ROOT_LOCAL 		:= $(ROOT0)\Arduino
-ROOT_TD 		:= $(ROOT0)\arduino-1.8.10\hardware
+ROOT_TD 		:= $(ROOT0)\arduino-1.8.11\hardware
 
 LIBS_LOCAL_BASE := $(ROOT_LOCAL)\libraries
 LIBS_LOCAL      := SdFat-beta 
@@ -29,27 +31,27 @@ LIBS_LOCAL      := SdFat-beta
 LIBS_SHARED_BASE  := $(ROOT_TD)\teensy\avr\libraries
 LIBS_SHARED       := SPI Time Audio Wire SD SerialFlash
 
-ifeq ($(MCU),mk66fx1m0)
-	BOARD_ID    := TEENSY36
+ifeq ($(BOARD_ID),TEENSY36)
 	Family 		:= teensy3
+	MCU  		:= mk66fx1m0
 	FLAGS_CPU   := -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
 	LIBS        := -larm_cortexM4lf_math -lm
-	DEFINES     := -D__MK66FX1M0__ 
+	DEFINES     := -D__MK66FX1M0__ -DARDUINO_$(BOARD_ID)
 	DEFINES     += -DF_CPU=96000000
 endif
 
-ifeq ($(MCU),imxrt1062)
-	BOARD_ID    := TEENSY40
+ifeq ($(BOARD_ID),TEENSY40)
 	Family		:= teensy4
+	MCU   		:= imxrt1062
 	FLAGS_CPU   := -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
 	LIBS        := -larm_cortexM4lf_math -lm
-	DEFINES     := -D__IMXRT1062__ 
+	DEFINES     := -D__IMXRT1062__ -DARDUINO_$(BOARD_ID)
 	DEFINES     += -DF_CPU=396000000
 endif
 
 $(info $(DEFINES))
-DEFINES     += -DTEENSYDUINO=148 -DARDUINO=10808
-DEFINES     += -DUSB_SERIAL -DLAYOUT_US_ENGLISH
+DEFINES     += -DTEENSYDUINO=150 -DARDUINO=10811 -DLAYOUT_US_ENGLISH
+DEFINES     += -D$(USB_DEVICE)
 
 
 CORE_BASE   	 := $(ROOT_TD)\teensy\avr\cores\$(Family)

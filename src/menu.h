@@ -26,10 +26,12 @@
 #include "core_pins.h"
 #include "usb_serial.h"
 
+#include "TimeLib.h"
+
 #include "config.h"
-int do_acq = 0;
-int gain = 8;
-int fr = 3;
+extern int do_acq;
+extern int gain;
+extern int fr;
 
 int boundaryCheck(int val, int minVal, int maxVal)
 {
@@ -90,9 +92,10 @@ static void doMenu2(void) // !
         case 'g': gain = boundaryCheck(Serial.parseInt(),8,24); break;
         case 'f': 
             fr   = Serial.parseInt(); 
-            if(fr == boundaryCheck(fr,0,8));  break;
-            Serial.println("Allowed frequency indices are:")
-            for(ii=0;ii<sizeof(fsamps)/sizeof(fsamps[0];ii++)) 
+            int frx=boundaryCheck(fr,0,8);
+            if(fr == frx) { fr=frx; break;}
+            Serial.println("Allowed frequency indices are:");
+            for(int ii=0; ii< (sizeof(fsamps)/sizeof(fsamps[0])); ii++) 
             { Serial.print(ii); Serial.print(": "); Serial.print(fsamps[ii]); Serial.println();  }
             break;
       }
@@ -114,7 +117,7 @@ static void doMenu3(void) // :
         }
         case 'c': // continue acquisition
         { do_acq=1;
-          Serial.println("Start");
+          Serial.println("Start/Continue");
           break;
         }
       }
@@ -125,10 +128,13 @@ static void doMenu3(void) // :
 int doMenu(void)
 {  
     if(!Serial.available()) return 0;
+    char c=Serial.read();
+    // enter menu only if command ':' has been sent
+    if(c != ':') return 0;
+    //
     int ret=0;
     while(!ret)
     {
-        char c=Serial.read();
         if (strchr("?!xa:", c))
         { switch (c)
             {
@@ -139,6 +145,8 @@ int doMenu(void)
                 case ':': doMenu3(); break;
             }
         }
+        if(!ret)
+          c=Serial.read();
     }
 
     return ret;

@@ -23,6 +23,7 @@
 #define CONFIG_H
 
 uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 384000};
+const int ifs = 4;
 /*
  * NOTE: changing frequency impacts the macros 
  *      AudioProcessorUsage and AudioProcessorUsageMax
@@ -63,7 +64,7 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 384000};
 
 // times for acquisition and filing
 uint32_t a_on = 60; // acquisition on time
-uint32_t a_off =60; // acquisition off time
+uint32_t a_off =0; // acquisition off time
 uint32_t t_on = 20; // file on time
 
 uint16_t r_h1s =  8;   // start of record period 1

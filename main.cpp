@@ -38,6 +38,7 @@
     AudioConnection     patchCord1(acq,0, queue[0],0);
     AudioConnection     patchCord2(acq,1, queue[1],0);
   #endif
+
 #elif AUDIO_MODE==WMXZ
   #include "i2s_mods.h"
   #include "I2S_32.h"
@@ -51,6 +52,16 @@
   #elif NCH == 2
     mAudioConnection     patchCord1(acq,0, queue[0],0);
     mAudioConnection     patchCord2(acq,1, queue[1],0);
+  #endif
+
+#endif
+
+#ifndef HAVE_DATA_T
+  #define HAVE_DATA_T
+  #if NBYTE==2
+    typedef int16_t data_t;
+  #elif NBYTE==4
+    typedef int32_t data_t;
   #endif
 #endif
 
@@ -209,6 +220,18 @@ void printDate(void)
    Serial.printf("%04d-%02d-%02d %02d:%02d:%02d\r\n",year(),month(),day(), hour(),minute(),second()); 
 }
 
+extern int do_acq;
+void startAcq(void)
+{
+  #if DO_DEBUG >0
+    printDate();
+  #endif
+  SGTL5000_enable();
+  I2S_startClock();
+  do_acq=1;
+  for(int ii=0; ii<NCH; ii++) queue[ii].clear();
+}
+
 void stopAcq(int nsec)
 {
   #if DO_DEBUG >0
@@ -219,15 +242,17 @@ void stopAcq(int nsec)
   setWakeupCallandSleep(nsec);
 }
 
-//#include "menu.h"
-extern int do_acq;
-int do_acq;
+int do_acq = 1;
+int gain = 8;
+int fr = ifs;
+
+#include "menu.h"
 
 extern "C" void setup() {
   // put your setup code here, to run once:
 
   #if DO_DEBUG>0
-    while(!Serial && (millis()<3000));// asm("wfi");
+    while(!Serial && (millis()<3000));
     Serial.println("\nVersion: "  __DATE__  " "  __TIME__);
   #endif
 
@@ -253,13 +278,15 @@ extern "C" void setup() {
     printDate();
   #endif
 
-  mAudioMemory16((MQUEU+6));
-  
+  #if NBYTE==2
+    mAudioMemory16((MQUEU+6));
+  #elif NBYTE==4
+    mAudioMemory32((MQUEU+6));
+  #endif
+
   audioShield.enable();
   audioShield.inputSelect(AUDIO_SELECT);  //AUDIO_INPUT_LINEIN or AUDIO_INPUT_MIC
 
-  //
-  //while(millis() < millis()+5000) continue;
   //
   I2S_modification(fsamps[FSI],32);
   delay(10);
@@ -284,31 +311,34 @@ extern "C" void setup() {
 
   for(int ii=0; ii<NCH; ii++) queue[ii].begin();
 
-  do_acq=1;
 }
 
-int16_t tmpStore[NCH*128]; // temporary buffer
+data_t tmpStore[NCH*128]; // temporary buffer
 
 void loop() {
   // put your main code here, to run repeatedly:
   static int16_t state=0; // 0: open new file, -1: last file
   static uint32_t tMax=0;
 
-  if(state==0) 
-  { //doMenu();
-    if(do_acq==0) return;
-  }
-  
+  static uint32_t t3=millis();
+
   if(state<0) return;
 
-  int16_t *data;
+  int mustClose;
+  int ret =doMenu();
+  if(ret>2) stopAcq(ret);
+  if(ret<0) 
+  { Serial.print(state); Serial.print(" "); Serial.print(do_acq); Serial.print(" "); Serial.println();
+    do_acq=1; state=0; t3=millis(); startAcq();}
 
-  static uint32_t t3=millis();
+  mustClose = (do_acq==0);
+  
+  data_t *data;
+
   uint32_t t1=millis();
 
   // check if we should continue to record, close file or hibernate
   int32_t nsec=0;
-  int mustClose;
 
   nsec=0;
   mustClose=0;
@@ -338,10 +368,10 @@ void loop() {
     // fetch data from queue and multiplex channels
     for(int ii=0; ii<NCH; ii++)
     {
-      data = (int16_t *)queue[ii].readBuffer(); 
+      data = (data_t *)queue[ii].readBuffer(); 
       //
       // copy to temporary buffer
-      int16_t *ptr= &tmpStore[ii];
+      data_t *ptr= &tmpStore[ii];
       for(int jj=0; jj<128; jj+=NCH) ptr[jj] = data[jj];
       //
       queue[ii].freeBuffer();
@@ -353,12 +383,12 @@ void loop() {
 //    ndat=128;
  
     //copy to disk buffer
-    int16_t *ptr1=(int16_t *) outptr;
-    int16_t *ptr2=(int16_t *) tmpStore;
+    data_t *ptr1=(int16_t *) outptr;
+    data_t *ptr2=(int16_t *) tmpStore;
     for(int jj=0; jj<NCH*ndat; jj++) ptr1[jj] = ptr2[jj];
     //
     // advance buffer pointer
-    outptr += (NCH*ndat); // (NCH*ndat shorts)
+    outptr += (NCH*ndat); // (NCH*ndat  words)
     //
     // 
     if(mustClose || (outptr == (diskBuffer+BUFFERSIZE)))
@@ -373,6 +403,7 @@ void loop() {
       #endif
       if(outptr>diskBuffer)
         state=uSD.write(diskBuffer,outptr-diskBuffer, mustClose); // this is blocking
+      //
       outptr = diskBuffer;
       if(mustClose) 
       { Serial.print("stateA = "); Serial.println(state);
@@ -381,8 +412,8 @@ void loop() {
     //
     if(ndat<128)
     { // copy rest to disk buffer
-      int16_t *ptr1=(int16_t *) outptr;
-      int16_t *ptr2=(int16_t *) &tmpStore[NCH*ndat];
+      data_t *ptr1=(data_t *) outptr;
+      data_t *ptr2=(data_t *) &tmpStore[NCH*ndat];
       for(int jj=0; jj<NCH*(128-ndat); jj++) ptr1[jj] = ptr2[jj];
       //
       outptr += (NCH*(128-ndat));
@@ -427,10 +458,8 @@ void loop() {
         Serial.println("I2S crashed ?");
         printDate();
       #endif
+
       uSD.close();
-//      state=-1;
-//      mustClose=0;
-//      setWakeupCallandSleep(10);
       stopAcq(10);
       return;
     }
@@ -462,5 +491,5 @@ void loop() {
   #endif
 
   //
-  asm("wfi"); // to save some power switch off idle cpu
+  //asm("wfi"); // to save some power switch off idle cpu
 }

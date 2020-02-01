@@ -206,6 +206,7 @@ void I2S_startClock(void)
 
 // ********************************************** following is to change SGTL5000 samling rates ********************
 #define SGTL5000_I2C_ADDR  0x0A  // CTRL_ADR0_CS pin low (normal configuration)
+#define CHIP_DIG_POWER		0x0002
 #define CHIP_CLK_CTRL     0x0004
 #define CHIP_I2S_CTRL     0x0006
 #define CHIP_ANA_POWER    0x0030 
@@ -252,8 +253,15 @@ void SGTL5000_modification(uint32_t fs_mode)
   chipWrite(CHIP_CLK_CTRL, (sgtl_mode<<2));  // 256*Fs| sgtl_mode = 0:32 kHz; 1:44.1 kHz; 2:48 kHz; 3:96 kHz
 }
 
+void SGTL5000_enable(void)
+{
+  chipWrite(CHIP_ANA_POWER, 0x40FF); 
+  chipWrite(CHIP_DIG_POWER, 0x0073); 
+}
+
 void SGTL5000_disable(void)
 {
+  chipWrite(CHIP_DIG_POWER, 0); 
   chipWrite(CHIP_ANA_POWER, 0); 
 }
 
