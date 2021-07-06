@@ -26,18 +26,21 @@
 
 #include "core_pins.h"
 
+#include "config.h"
 //==================== local uSD interface ========================================
 
 #ifndef BUFFERSIZE
   #define BUFFERSIZE (8*1024)
 #endif
-int16_t diskBuffer[BUFFERSIZE];
-int16_t *outptr = diskBuffer;
+data_t diskBuffer[BUFFERSIZE];
+data_t *outptr = diskBuffer;
 
 #include "SD.h"
 #include "TimeLib.h"
 
-#define USE_SDIO 0
+#ifndef USE_SDIO
+  #define USE_SDIO 0
+#endif
 
   #if defined(__MK20DX256__)
     #define SD_CS  10
@@ -136,13 +139,13 @@ class c_mFS
       file.close();
     }
 
-    uint32_t write(uint8_t *buffer, uint32_t nbuf)
+    uint32_t write(void *buffer, uint32_t nbuf)
     {
       if (nbuf != file.write(buffer, nbuf)) sd.sdfs.errorHalt("write failed");
       return nbuf;
     }
 
-    uint32_t read(uint8_t *buffer, uint32_t nbuf)
+    uint32_t read(void *buffer, uint32_t nbuf)
     {      
       if ((int)nbuf != file.read(buffer, nbuf)) sd.sdfs.errorHalt("read failed");
       return nbuf;
@@ -158,7 +161,7 @@ class c_uSD
     void close(void);
 
     void chDir(void);
-    int16_t write(int16_t * data, int32_t ndat, int mustClose);
+    int16_t write(void * data, int32_t ndat, int mustClose);
 
     uint32_t nCount=0;
     int16_t getStatus() {return state;}
@@ -215,7 +218,7 @@ void c_uSD::chDir(void)
   mFS.chDir(dirName);
 }
 
-int16_t c_uSD::write(int16_t *data, int32_t ndat, int mustClose)
+int16_t c_uSD::write(void *data, int32_t ndat, int mustClose)
 {
   if(state == 0)
   { // open file

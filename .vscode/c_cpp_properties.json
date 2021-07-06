@@ -9,7 +9,7 @@
     {
       "name": "Teensy 36",
       "includePath": [
-        "src/**",
+        "./**",
         "${LOCAL_LIBRARIES}/MTP_t4/**",
         "${ROOT0}/cores/teensy3",
         "${ROOT0}/libraries/Audio/**",
@@ -34,7 +34,7 @@
     {
       "name": "Teensy 40",
       "includePath": [
-        "src/**",
+        "./**",
         "${LOCAL_LIBRARIES}/MTP_t4/**",
         "${ROOT0}/cores/teensy4",
         "${ROOT0}/libraries/Audio/**",
