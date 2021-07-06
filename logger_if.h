@@ -27,8 +27,6 @@
 #include "core_pins.h"
 
 //==================== local uSD interface ========================================
-// this implementation used SdFat-beta from Bill Greiman
-// which needs to be installed as local library 
 
 #ifndef BUFFERSIZE
   #define BUFFERSIZE (8*1024)
@@ -36,7 +34,120 @@
 int16_t diskBuffer[BUFFERSIZE];
 int16_t *outptr = diskBuffer;
 
-#include "mfs.h"
+#include "SD.h"
+#include "TimeLib.h"
+
+#define USE_SDIO 0
+
+  #if defined(__MK20DX256__)
+    #define SD_CS  10
+    #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
+    #define SD_MOSI  7
+    #define SD_MISO 12
+    #define SD_SCK  14
+    
+  #elif defined(__MK64FX512__) || defined(__MK66FX1M0__)
+    #if USE_SDIO==1
+      // Use FIFO SDIO or DMA_SDIO
+      #define SD_CONFIG SdioConfig(FIFO_SDIO)
+  //    #define SD_CONFIG SdioConfig(DMA_SDIO)
+    #else
+      #define SD_CS  10
+      #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
+      #define SD_MOSI  7
+      #define SD_MISO 12
+      #define SD_SCK  14
+    #endif
+  #elif defined(__IMXRT1062__)
+    #if USE_SDIO==1
+      // Use FIFO SDIO or DMA_SDIO
+      #define SD_CONFIG SdioConfig(FIFO_SDIO)
+  //    #define SD_CONFIG SdioConfig(DMA_SDIO)
+    #else
+      #define SD_CS  10
+      #define SD_CONFIG SdSpiConfig(SD_CS, DEDICATED_SPI, SPI_FULL_SPEED)
+      #define SD_MOSI 11
+      #define SD_MISO 12
+      #define SD_SCK  13
+    #endif
+  #endif
+
+//------------------------------------------------------------------------------
+// Call back for file timestamps.  Only called for file create and sync().
+void dateTime(uint16_t* date, uint16_t* time, uint8_t* ms10) 
+{ 
+  // Return date using FS_DATE macro to format fields.
+  *date = FS_DATE(year(), month(), day());
+
+  // Return time using FS_TIME macro to format fields.
+  *time = FS_TIME(hour(), minute(), second());
+  
+  // Return low time bits in units of 10 ms.
+  *ms10 = second() & 1 ? 100 : 0;
+}
+
+class c_mFS
+{
+  private:
+  SDClass sd;
+  File file;
+  
+  public:
+    void init(void)
+    { Serial.println("Using SdFat");
+
+      #if USE_SDI0==0
+        SPI.setMOSI(SD_MOSI);
+        SPI.setMISO(SD_MISO);
+        SPI.setSCK(SD_SCK);
+      #endif
+      if (!sd.sdfs.begin(SD_CONFIG)) sd.sdfs.errorHalt("sd.begin failed");
+    
+      // Set Time callback
+      FsDateTime::callback = dateTime;
+    }
+
+    void mkDir(char * dirname)  { if(!sd.exists(dirname)) sd.mkdir(dirname);  }
+    void chDir(char * dirname)  { sd.sdfs.chdir(dirname);   }
+    
+    void exit(void)
+    {
+      #if defined(__MK20DX256__)
+      digitalWriteFast(SD_CS,LOW);
+        int ii;
+        for(ii=0; SPI.transfer(0xff)!=0xFF && ii<30000; ii++) ;
+        Serial.println(ii); Serial.flush();
+      digitalWriteFast(SD_CS,HIGH);
+
+      sd.end();
+      SPI.end();
+      #endif  
+    }
+    
+    void open(char * filename)
+    {
+      file = sd.open(filename,FILE_WRITE);
+      if(!file) sd.sdfs.errorHalt("file.open failed");
+    }
+
+    void close(void)
+    {
+      file.truncate();
+      file.close();
+    }
+
+    uint32_t write(uint8_t *buffer, uint32_t nbuf)
+    {
+      if (nbuf != file.write(buffer, nbuf)) sd.sdfs.errorHalt("write failed");
+      return nbuf;
+    }
+
+    uint32_t read(uint8_t *buffer, uint32_t nbuf)
+    {      
+      if ((int)nbuf != file.read(buffer, nbuf)) sd.sdfs.errorHalt("read failed");
+      return nbuf;
+    }
+};
 
 class c_uSD
 {

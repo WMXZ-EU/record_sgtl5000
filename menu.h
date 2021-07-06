@@ -98,7 +98,7 @@ static void doMenu2(void) // !
             int frx=boundaryCheck(fr,0,8);
             if(fr == frx) { fr=frx; break;}
             Serial.println("Allowed frequency indices are:");
-            for(int ii=0; ii< (sizeof(fsamps)/sizeof(fsamps[0])); ii++) 
+            for(unsigned int ii=0; ii< (sizeof(fsamps)/sizeof(fsamps[0])); ii++) 
             { Serial.print(ii); Serial.print(": "); Serial.print(fsamps[ii]); Serial.println();  }
             break;
       }

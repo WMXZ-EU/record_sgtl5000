@@ -57,9 +57,9 @@ public:
 	uint32_t dropCount=0;
 
 private:
-	audio_block_t *inputQueueArray[1];
-	audio_block_t * volatile queue[MQ];
-	audio_block_t *userblock;
+	maudio_block_t *inputQueueArray[1];
+	maudio_block_t * volatile queue[MQ];
+	maudio_block_t *userblock;
 	volatile uint16_t head, tail, enabled;
 
   //temp variables
@@ -114,7 +114,7 @@ void mRecordQueue<MQ>::freeBuffer(void)
 template <int MQ>
 void mRecordQueue<MQ>::update(void)
 {
-	audio_block_t *block;
+	maudio_block_t *block;
 
 	block = receiveReadOnly();
 	if (!block) return;

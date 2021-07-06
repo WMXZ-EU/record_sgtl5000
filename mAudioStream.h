@@ -76,13 +76,13 @@
 #define AUDIO_BLOCK_SAMPLES_NCH (AUDIO_BLOCK_SAMPLES*NCH)
 
 #define mAudioMemory16(num) ({ \
-	static audio_block_t audio_data[num]; \
+	static maudio_block_t audio_data[num]; \
   static int16_t audioBuffer[num*AUDIO_BLOCK_SAMPLES_NCH]; \
 	mAudioStream::initialize_memory(audio_data, num, audioBuffer, sizeof(audioBuffer[0])); \
 })
 
 #define mAudioMemory32(num) ({ \
-	static audio_block_t audio_data[num]; \
+	static maudio_block_t audio_data[num]; \
   static int32_t audioBuffer[num*AUDIO_BLOCK_SAMPLES_NCH]; \
 	mAudioStream::initialize_memory(audio_data, num, audioBuffer, sizeof(audioBuffer[0])); \
 })
@@ -93,7 +93,7 @@
 class mAudioStream;
 class mAudioConnection;
 
-typedef struct audio_block_struct {
+typedef struct maudio_block_struct {
   uint8_t  ref_count;
   uint8_t  dataSize;
   uint16_t memory_pool_index;
@@ -105,7 +105,7 @@ typedef struct audio_block_struct {
 //  #else
 //    #error "wrong wordsize"
 //  #endif
-} audio_block_t;
+} maudio_block_t;
 
 
 class mAudioConnection
@@ -134,7 +134,7 @@ protected:
 class mAudioStream
 {
 public:
-  mAudioStream(unsigned char ninput, audio_block_t **iqueue) :
+  mAudioStream(unsigned char ninput, maudio_block_t **iqueue) :
     num_inputs(ninput), inputQueue(iqueue) {
       active = false;
       destination_list = NULL;
@@ -154,17 +154,17 @@ public:
     }
 
 //  static void initialize_memory(audio_block_t *data, unsigned int num);
-  static void initialize_memory(audio_block_t *data, unsigned int num, void *buffer, unsigned int element_size);
+  static void initialize_memory(maudio_block_t *data, unsigned int num, void *buffer, unsigned int element_size);
   static uint16_t memory_used;
   static uint16_t memory_used_max;
 protected:
   bool active;
   unsigned char num_inputs;
-  static audio_block_t * allocate(void);
-  static void release(audio_block_t * block);
-  void transmit(audio_block_t *block, unsigned char index = 0);
-  audio_block_t * receiveReadOnly(unsigned int index = 0);
-  audio_block_t * receiveWritable(unsigned int index = 0);
+  static maudio_block_t * allocate(void);
+  static void release(maudio_block_t * block);
+  void transmit(maudio_block_t *block, unsigned char index = 0);
+  maudio_block_t * receiveReadOnly(unsigned int index = 0);
+  maudio_block_t * receiveWritable(unsigned int index = 0);
   static bool update_setup(int prio=13);
   static void update_stop(void);
   static void update_all(void) { NVIC_SET_PENDING(IRQ_SOFTWARE); }
@@ -172,12 +172,12 @@ protected:
   friend class mAudioConnection;
 private:
   mAudioConnection *destination_list;
-  audio_block_t **inputQueue;
+  maudio_block_t **inputQueue;
   static bool update_scheduled;
   virtual void update(void) = 0;
   static mAudioStream *first_update; // for update_all
   mAudioStream *next_update; // for update_all
-  static audio_block_t *memory_pool;
+  static maudio_block_t *memory_pool;
   static uint32_t memory_pool_available_mask[];
   static uint16_t memory_pool_first_mask;
 
@@ -217,7 +217,7 @@ private:
 #define MAX_BLOCKS (MAX_AUDIO_MEMORY / AUDIO_BLOCK_SAMPLES_NCH / NBYTE)
 #define NUM_MASKS  ((MAX_BLOCKS + 31) / 32)
 
-audio_block_t * mAudioStream::memory_pool;
+maudio_block_t * mAudioStream::memory_pool;
 uint32_t mAudioStream::memory_pool_available_mask[NUM_MASKS];
 uint16_t mAudioStream::memory_pool_first_mask;
 
@@ -229,7 +229,7 @@ uint16_t mAudioStream::dataSize = 2;
 // Set up the pool of audio data blocks
 // placing them all onto the free list
 //void mAudioStream::initialize_memory(audio_block_t *data, unsigned int num)
-void mAudioStream::initialize_memory(audio_block_t *data, unsigned int num, void *dataBuffers, unsigned int element_size)
+void mAudioStream::initialize_memory(maudio_block_t *data, unsigned int num, void *dataBuffers, unsigned int element_size)
 {
   unsigned int i;
   unsigned int maxnum = MAX_BLOCKS;
@@ -259,11 +259,11 @@ void mAudioStream::initialize_memory(audio_block_t *data, unsigned int num, void
 
 // Allocate 1 audio data block.  If successful
 // the caller is the only owner of this new block
-audio_block_t * mAudioStream::allocate(void)
+maudio_block_t * mAudioStream::allocate(void)
 {
   uint32_t n, index, avail;
   uint32_t *p, *end;
-  audio_block_t *block;
+  maudio_block_t *block;
   uint16_t used;
 
   p = memory_pool_available_mask;
@@ -301,7 +301,7 @@ audio_block_t * mAudioStream::allocate(void)
 // Release ownership of a data block.  If no
 // other streams have ownership, the block is
 // returned to the free pool
-void mAudioStream::release(audio_block_t *block)
+void mAudioStream::release(maudio_block_t *block)
 {
   //if (block == NULL) return;
   uint32_t mask = (0x80000000 >> (31 - (block->memory_pool_index & 0x1F)));
@@ -325,7 +325,7 @@ void mAudioStream::release(audio_block_t *block)
 // by the caller after it's transmitted.  This allows the
 // caller to transmit to same block to more than 1 output,
 // and then release it once after all transmit calls.
-void mAudioStream::transmit(audio_block_t *block, unsigned char index)
+void mAudioStream::transmit(maudio_block_t *block, unsigned char index)
 {
   for (mAudioConnection *c = destination_list; c != NULL; c = c->next_dest) {
     if (c->src_index == index) {
@@ -340,9 +340,9 @@ void mAudioStream::transmit(audio_block_t *block, unsigned char index)
 
 // Receive block from an input.  The block's data
 // may be shared with other streams, so it must not be written
-audio_block_t * mAudioStream::receiveReadOnly(unsigned int index)
+maudio_block_t * mAudioStream::receiveReadOnly(unsigned int index)
 {
-  audio_block_t *in;
+  maudio_block_t *in;
 
   if (index >= num_inputs) return NULL;
   in = inputQueue[index];
@@ -352,9 +352,9 @@ audio_block_t * mAudioStream::receiveReadOnly(unsigned int index)
 
 // Receive block from an input.  The block will not
 // be shared, so its contents may be changed.
-audio_block_t * mAudioStream::receiveWritable(unsigned int index)
+maudio_block_t * mAudioStream::receiveWritable(unsigned int index)
 {
-  audio_block_t *in, *p;
+  maudio_block_t *in, *p;
 
   if (index >= num_inputs) return NULL;
   in = inputQueue[index];

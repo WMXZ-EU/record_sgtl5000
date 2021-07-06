@@ -23,13 +23,12 @@ USB_DEVICE		:= USB_SERIAL
 
 ROOT0 			:= C:\Users\zimme\Documents
 ROOT_LOCAL 		:= $(ROOT0)\Arduino
-ROOT_TD 		:= $(ROOT0)\arduino-1.8.11\hardware
+ROOT_TD 		:= $(ROOT0)\arduino-1.8.15\hardware
 
 LIBS_LOCAL_BASE := $(ROOT_LOCAL)\libraries
-LIBS_LOCAL      := SdFat-beta 
 
 LIBS_SHARED_BASE  := $(ROOT_TD)\teensy\avr\libraries
-LIBS_SHARED       := SPI Time Audio Wire SD SerialFlash
+LIBS_SHARED       := SPI Time Wire SD SDfat Audio Serialflash
 
 ifeq ($(BOARD_ID),TEENSY36)
 	Family 		:= teensy3
