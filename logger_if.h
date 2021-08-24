@@ -99,7 +99,7 @@ class c_mFS
     void init(void)
     { Serial.println("Using SdFat");
 
-      #if USE_SDI0==0
+      #if USE_SDIO==0
         SPI.setMOSI(SD_MOSI);
         SPI.setMISO(SD_MISO);
         SPI.setSCK(SD_SCK);
